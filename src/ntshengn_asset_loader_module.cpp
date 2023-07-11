@@ -4,36 +4,52 @@
 #include "../Common/utils/ntshengn_defines.h"
 #include "../Common/utils/ntshengn_enums.h"
 #include "../Common/utils/ntshengn_utils_file.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "../external/stb/stb_image.h"
 #include <unordered_map>
 
 NtshEngn::Sound NtshEngn::AssetLoaderModule::loadSound(const std::string& filePath) {
 	Sound newSound;
 
-	if (File::extension(filePath) == "wav") {
+	std::string extension = File::extension(filePath);
+	if (extension == "wav") {
 		loadSoundWav(filePath, newSound);
 	}
 	else {
-		NTSHENGN_MODULE_WARNING("Sound file extension \"." + File::extension(filePath) + "\" not supported.");
+		NTSHENGN_MODULE_WARNING("Sound file extension \"." + extension + "\" not supported.");
 	}
 
 	return newSound;
 }
 
 NtshEngn::Image NtshEngn::AssetLoaderModule::loadImage(const std::string& filePath) {
-	NTSHENGN_UNUSED(filePath);
-	NTSHENGN_MODULE_FUNCTION_NOT_IMPLEMENTED();
+	Image newImage;
 
-	return Image();
+	std::string extension = File::extension(filePath);
+	if ((extension == "jpg") ||
+		(extension == "jpeg") ||
+		(extension == "png") ||
+		(extension == "tga") ||
+		(extension == "bmp") ||
+		(extension == "gif")) {
+		loadImageStb(filePath, newImage);
+	}
+	else {
+		NTSHENGN_MODULE_WARNING("Sound file extension \"." + extension + "\" not supported.");
+	}
+
+	return newImage;
 }
 
 NtshEngn::Model NtshEngn::AssetLoaderModule::loadModel(const std::string& filePath) {
 	Model newModel;
 
-	if (File::extension(filePath) == "obj") {
+	std::string extension = File::extension(filePath);
+	if (extension == "obj") {
 		loadModelObj(filePath, newModel);
 	}
 	else {
-		NTSHENGN_MODULE_WARNING("Model file extension \"." + File::extension(filePath) + "\" not supported.");
+		NTSHENGN_MODULE_WARNING("Model file extension \"." + extension + "\" not supported.");
 	}
 
 	return newModel;
@@ -147,6 +163,28 @@ void NtshEngn::AssetLoaderModule::loadSoundWav(const std::string& filePath, Soun
 	data.erase(data.begin(), data.end());
 
 	file.close();
+}
+
+void NtshEngn::AssetLoaderModule::loadImageStb(const std::string& filePath, Image& image) {
+	int width;
+	int height;
+	int texChannels;
+
+	stbi_uc* pixels = stbi_load(filePath.c_str(), &width, &height, &texChannels, STBI_rgb_alpha);
+	if (!pixels) {
+		NTSHENGN_MODULE_WARNING("Could not load image file \"" + filePath + "\".");
+
+		return;
+	}
+
+	image.width = static_cast<uint32_t>(width);
+	image.height = static_cast<uint32_t>(height);
+	image.format = ImageFormat::R8G8B8A8;
+	image.colorSpace = ImageColorSpace::Linear;
+	image.data.resize(width * height * 4);
+	std::copy(pixels, pixels + (width * height * 4), image.data.begin());
+
+	stbi_image_free(pixels);
 }
 
 void NtshEngn::AssetLoaderModule::loadModelObj(const std::string& filePath, Model& model) {

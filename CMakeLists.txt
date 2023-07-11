@@ -57,6 +57,10 @@ set(HEADERS ${MODULE_HEADERS})
 
 add_library(${PROJECT_NAME} SHARED ${SOURCES} ${HEADERS})
 
+target_include_directories(${PROJECT_NAME}
+	PRIVATE
+		external/stb)
+
 target_link_libraries(${PROJECT_NAME}
 	PRIVATE
 		NutshellEngine::Module
