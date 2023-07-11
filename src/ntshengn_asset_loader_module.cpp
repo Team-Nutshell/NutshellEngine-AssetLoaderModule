@@ -4,8 +4,12 @@
 #include "../Common/utils/ntshengn_defines.h"
 #include "../Common/utils/ntshengn_enums.h"
 #include "../Common/utils/ntshengn_utils_file.h"
+#define CGLTF_IMPLEMENTATION
+#include "../external/cgltf/cgltf.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "../external/stb/stb_image.h"
+#include <cstddef>
+#include <algorithm>
 #include <unordered_map>
 
 NtshEngn::Sound NtshEngn::AssetLoaderModule::loadSound(const std::string& filePath) {
@@ -48,6 +52,10 @@ NtshEngn::Model NtshEngn::AssetLoaderModule::loadModel(const std::string& filePa
 	if (extension == "obj") {
 		loadModelObj(filePath, newModel);
 	}
+	else if ((extension == "gltf") ||
+		(extension == "glb")) {
+		loadModelGltf(filePath, newModel);
+	}
 	else {
 		NTSHENGN_MODULE_WARNING("Model file extension \"." + extension + "\" not supported.");
 	}
@@ -64,96 +72,115 @@ void NtshEngn::AssetLoaderModule::loadSoundWav(const std::string& filePath, Soun
 
 	// Open file
 	if (!file.is_open()) {
-		NTSHENGN_ASSET_MANAGER_ERROR("Could not open sound file \"" + filePath + "\".", Result::AssetManagerFileNotFound);
+		NTSHENGN_MODULE_WARNING("Could not open sound file \"" + filePath + "\".");
+		return;
 	}
 
 	// RIFF header
 	if (!file.read(buffer, 4)) {
-		NTSHENGN_ASSET_MANAGER_ERROR("Could not read \"RIFF\" for sound file \"" + filePath + "\".", Result::AssetManagerError);
+		NTSHENGN_MODULE_WARNING("Could not read \"RIFF\" for sound file \"" + filePath + "\".");
+		return;
 	}
 	if (strncmp(buffer, "RIFF", 4) != 0) {
-		NTSHENGN_ASSET_MANAGER_ERROR("File \"" + filePath + "\" is not a valid WAVE sound file (RIFF header missing).", Result::AssetManagerError);
+		NTSHENGN_MODULE_WARNING("File \"" + filePath + "\" is not a valid WAVE sound file (RIFF header missing).");
+		return;
 	}
 
 	// Size
 	if (!file.read(buffer, 4)) {
-		NTSHENGN_ASSET_MANAGER_ERROR("Could not read size for sound file \"" + filePath + "\".", Result::AssetManagerError);
+		NTSHENGN_MODULE_WARNING("Could not read size for sound file \"" + filePath + "\".");
+		return;
 	}
 
 	// WAVE header
 	if (!file.read(buffer, 4)) {
-		NTSHENGN_ASSET_MANAGER_ERROR("Could not read \"WAVE\" for sound file \"" + filePath + "\".", Result::AssetManagerError);
+		NTSHENGN_MODULE_WARNING("Could not read \"WAVE\" for sound file \"" + filePath + "\".");
+		return;
 	}
 	if (strncmp(buffer, "WAVE", 4) != 0) {
-		NTSHENGN_ASSET_MANAGER_ERROR("File \"" + filePath + "\" is not a valid WAVE sound file (WAVE header missing).", Result::AssetManagerError);
+		NTSHENGN_MODULE_WARNING("File \"" + filePath + "\" is not a valid WAVE sound file (WAVE header missing).");
+		return;
 	}
 
 	// fmt/0
 	if (!file.read(buffer, 4)) {
-		NTSHENGN_ASSET_MANAGER_ERROR("Could not read fmt/0 for sound file \"" + filePath + "\".", Result::AssetManagerError);
+		NTSHENGN_MODULE_WARNING("Could not read fmt/0 for sound file \"" + filePath + "\".");
+		return;
 	}
 
 	// 16
 	if (!file.read(buffer, 4)) {
-		NTSHENGN_ASSET_MANAGER_ERROR("Could not read 16 for sound file \"" + filePath + "\".", Result::AssetManagerError);
+		NTSHENGN_MODULE_WARNING("Could not read 16 for sound file \"" + filePath + "\".");
+		return;
 	}
 
 	// PCM
 	if (!file.read(buffer, 2)) {
-		NTSHENGN_ASSET_MANAGER_ERROR("Could not read PCM for sound file \"" + filePath + "\".", Result::AssetManagerError);
+		NTSHENGN_MODULE_WARNING("Could not read PCM for sound file \"" + filePath + "\".");
+		return;
 	}
 
 	// Channels
 	if (!file.read(buffer, 2)) {
-		NTSHENGN_ASSET_MANAGER_ERROR("Could not read the number of channels for sound file \"" + filePath + "\".", Result::AssetManagerError);
+		NTSHENGN_MODULE_WARNING("Could not read the number of channels for sound file \"" + filePath + "\".");
+		return;
 	}
 	memcpy(&tmp, buffer, 2);
 	sound.channels = static_cast<uint8_t>(tmp);
 
 	// Sample rate
 	if (!file.read(buffer, 4)) {
-		NTSHENGN_ASSET_MANAGER_ERROR("Could not read sample rate for sound file \"" + filePath + "\".", Result::AssetManagerError);
+		NTSHENGN_MODULE_WARNING("Could not read sample rate for sound file \"" + filePath + "\".");
+		return;
 	}
 	memcpy(&tmp, buffer, 4);
 	sound.sampleRate = static_cast<int32_t>(tmp);
 
 	// Byte rate ((sampleRate * bitsPerSample * channels) / 8)
 	if (!file.read(buffer, 4)) {
-		NTSHENGN_ASSET_MANAGER_ERROR("Could not read byte rate for sound file \"" + filePath + "\".", Result::AssetManagerError);
+		NTSHENGN_MODULE_WARNING("Could not read byte rate for sound file \"" + filePath + "\".");
+		return;
 	}
 
 	// Block align ((bitsPerSample * channels) / 8)
 	if (!file.read(buffer, 2)) {
-		NTSHENGN_ASSET_MANAGER_ERROR("Could not read block align for sound file \"" + filePath + "\".", Result::AssetManagerError);
+		NTSHENGN_MODULE_WARNING("Could not read block align for sound file \"" + filePath + "\".");
+		return;
 	}
 
 	// Bits per sample
 	if (!file.read(buffer, 2)) {
-		NTSHENGN_ASSET_MANAGER_ERROR("Could not read bits per sample for sound file \"" + filePath + "\".", Result::AssetManagerError);
+		NTSHENGN_MODULE_WARNING("Could not read bits per sample for sound file \"" + filePath + "\".");
+		return;
 	}
 	memcpy(&tmp, buffer, 2);
 	sound.bitsPerSample = static_cast<uint8_t>(tmp);
 
 	// data header
 	if (!file.read(buffer, 4)) {
-		NTSHENGN_ASSET_MANAGER_ERROR("Could not read \"data\" for sound file \"" + filePath + "\".", Result::AssetManagerError);
+		NTSHENGN_MODULE_WARNING("Could not read \"data\" for sound file \"" + filePath + "\".");
+		return;
 	}
 	if (strncmp(buffer, "data", 4) != 0) {
-		NTSHENGN_ASSET_MANAGER_ERROR("File \"" + filePath + "\" is not a valid WAVE sound file (data header missing).", Result::AssetManagerError);
+		NTSHENGN_MODULE_WARNING("File \"" + filePath + "\" is not a valid WAVE sound file (data header missing).");
+		return;
 	}
 
 	// Data size
 	if (!file.read(buffer, 4)) {
-		NTSHENGN_ASSET_MANAGER_ERROR("Could not read data size for sound file \"" + filePath + "\".", Result::AssetManagerError);
+		NTSHENGN_MODULE_WARNING("Could not read data size for sound file \"" + filePath + "\".");
+		return;
 	}
 	memcpy(&tmp, buffer, 4);
 	sound.size = static_cast<size_t>(tmp);
 
 	if (file.eof()) {
-		NTSHENGN_ASSET_MANAGER_ERROR("File \"" + filePath + "\" is not a valid WAVE sound file (data missing).", Result::AssetManagerError);
+		NTSHENGN_MODULE_WARNING("File \"" + filePath + "\" is not a valid WAVE sound file (data missing).");
+		return;
 	}
 	if (file.fail()) {
-		NTSHENGN_ASSET_MANAGER_ERROR("Unknown error while loading WAVE sound file.", Result::AssetManagerError);
+		NTSHENGN_MODULE_WARNING("Unknown error while loading WAVE sound file.");
+		return;
 	}
 
 	// Data
@@ -173,7 +200,6 @@ void NtshEngn::AssetLoaderModule::loadImageStb(const std::string& filePath, Imag
 	stbi_uc* pixels = stbi_load(filePath.c_str(), &width, &height, &texChannels, STBI_rgb_alpha);
 	if (!pixels) {
 		NTSHENGN_MODULE_WARNING("Could not load image file \"" + filePath + "\".");
-
 		return;
 	}
 
@@ -192,7 +218,8 @@ void NtshEngn::AssetLoaderModule::loadModelObj(const std::string& filePath, Mode
 
 	// Open file
 	if (!file.is_open()) {
-		NTSHENGN_ASSET_MANAGER_ERROR("Could not open model file \"" + filePath + "\".", Result::AssetManagerFileNotFound);
+		NTSHENGN_MODULE_WARNING("Could not open model file \"" + filePath + "\".");
+		return;
 	}
 
 	std::vector<std::array<float, 3>> positions;
@@ -311,6 +338,127 @@ void NtshEngn::AssetLoaderModule::loadModelObj(const std::string& filePath, Mode
 	model.primitives.push_back({ mesh, {} });
 
 	file.close();
+}
+
+void NtshEngn::AssetLoaderModule::loadModelGltf(const std::string& filePath, Model& model) {
+	cgltf_options options = {};
+	cgltf_data* data = NULL;
+	cgltf_result result = cgltf_parse_file(&options, filePath.c_str(), &data);
+	if (result == cgltf_result_success) {
+		result = cgltf_load_buffers(&options, data, filePath.c_str());
+
+		if (result != cgltf_result_success) {
+			NTSHENGN_MODULE_WARNING("Could not load buffers for model file \"" + filePath + "\".");
+			return;
+		}
+		else {
+			cgltf_scene* scene = data->scene;
+
+			nml::mat4 modelMatrix = nml::mat4();
+
+			for (size_t i = 0; i < scene->nodes_count; i++) {
+				loadGltfNode(filePath, model, scene->nodes[i], modelMatrix);
+			}
+		}
+	}
+	else {
+		NTSHENGN_MODULE_WARNING("Could not load model file \"" + filePath + "\".");
+	}
+}
+
+void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Model& model, cgltf_node* node, nml::mat4& modelMatrix) {
+	if (node->has_matrix) {
+		modelMatrix *= nml::mat4(node->matrix);
+	}
+	else {
+		if (node->has_translation) {
+			modelMatrix *= nml::translate(nml::vec3(node->translation));
+		}
+		if (node->has_rotation) {
+			modelMatrix *= nml::to_mat4(nml::quat(node->rotation[3], node->rotation[0], node->rotation[1], node->rotation[2]));
+		}
+		if (node->has_scale) {
+			modelMatrix *= nml::scale(nml::vec3(node->scale));
+		}
+	}
+
+	if (node->mesh != NULL) {
+		cgltf_mesh* nodeMesh = node->mesh;
+		for (size_t i = 0; i < nodeMesh->primitives_count; i++) {
+			cgltf_primitive nodeMeshPrimitive = nodeMesh->primitives[i];
+
+			ModelPrimitive primitive;
+
+			float* position;
+			float* normal;
+			float* uv;
+			float* color;
+			float* tangent;
+			unsigned short* joints;
+			float* weights;
+
+			size_t positionCount = 0;
+			size_t normalCount = 0;
+			size_t uvCount = 0;
+			size_t colorCount = 0;
+			size_t tangentCount = 0;
+			size_t jointsCount = 0;
+			size_t weightsCount = 0;
+
+			size_t positionStride = 0;
+			size_t normalStride = 0;
+			size_t uvStride = 0;
+			size_t colorStride = 0;
+			size_t tangentStride = 0;
+			size_t jointsStride = 0;
+			size_t weightsStride = 0;
+
+			for (size_t j = 0; j < nodeMeshPrimitive.attributes_count; j++) {
+				cgltf_attribute attribute = nodeMeshPrimitive.attributes[i];
+				std::string attributeName = std::string(attribute.name);
+
+				cgltf_accessor* accessor = attribute.data;
+				cgltf_buffer_view* bufferView = accessor->buffer_view;
+				std::byte* buffer = static_cast<std::byte*>(bufferView->buffer->data);
+				std::byte* bufferOffset = buffer + accessor->offset + bufferView->offset;
+				if (attributeName == "POSITION") {
+					position = reinterpret_cast<float*>(bufferOffset);
+					positionCount = attribute.data->count;
+					positionStride = std::max(bufferView->stride, 3 * sizeof(float));
+				}
+				else if (attributeName == "NORMAL") {
+					normal = reinterpret_cast<float*>(bufferOffset);
+					normalCount = attribute.data->count;
+					normalStride = std::max(bufferView->stride, 3 * sizeof(float));
+				}
+				else if (attributeName == "TEXCOORD_0") {
+					uv = reinterpret_cast<float*>(bufferOffset);
+					uvCount = attribute.data->count;
+					uvStride = std::max(bufferView->stride, 2 * sizeof(float));
+				}
+				else if (attributeName == "COLOR_0") {
+					color = reinterpret_cast<float*>(bufferOffset);
+					colorCount = attribute.data->count;
+					colorStride = std::max(bufferView->stride, 3 * sizeof(float));
+				}
+				else if (attributeName == "TANGENT") {
+					tangent = reinterpret_cast<float*>(bufferOffset);
+					tangentCount = attribute.data->count;
+					tangentStride = std::max(bufferView->stride, 4 * sizeof(float));
+				}
+				else if (attributeName == "JOINTS_0") {
+					joints = reinterpret_cast<unsigned short*>(bufferOffset);
+					jointsCount = attribute.data->count;
+					jointsStride = std::max(bufferView->stride, 4 * sizeof(unsigned short));
+				}
+				else if (attributeName == "WEIGHTS_0") {
+					weights = reinterpret_cast<float*>(bufferOffset);
+					weightsCount = attribute.data->count;
+					weightsStride = std::max(bufferView->stride, 4 * sizeof(float));
+				}
+			}
+		}
+	}
 }
 
 extern "C" NTSHENGN_MODULE_API NtshEngn::AssetLoaderModuleInterface* createModule() {
