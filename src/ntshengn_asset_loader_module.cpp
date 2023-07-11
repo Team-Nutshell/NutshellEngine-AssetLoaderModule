@@ -420,6 +420,8 @@ void NtshEngn::AssetLoaderModule::loadModelObj(const std::string& filePath, Mode
 		}
 	}
 
+	calculateTangents(mesh);
+
 	model.primitives.push_back({ mesh, {} });
 
 	file.close();
@@ -474,13 +476,14 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 
 			ModelPrimitive primitive;
 
-			float* position;
-			float* normal;
-			float* uv;
-			float* color;
-			float* tangent;
-			unsigned short* joints;
-			float* weights;
+			// Vertices
+			float* position = nullptr;
+			float* normal = nullptr;
+			float* uv = nullptr;
+			float* color = nullptr;
+			float* tangent = nullptr;
+			unsigned short* joints = nullptr;
+			float* weights = nullptr;
 
 			size_t positionCount = 0;
 			size_t normalCount = 0;
@@ -499,7 +502,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 			size_t weightsStride = 0;
 
 			for (size_t j = 0; j < nodeMeshPrimitive.attributes_count; j++) {
-				cgltf_attribute attribute = nodeMeshPrimitive.attributes[i];
+				cgltf_attribute attribute = nodeMeshPrimitive.attributes[j];
 				std::string attributeName = std::string(attribute.name);
 
 				cgltf_accessor* accessor = attribute.data;
@@ -542,7 +545,125 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 					weightsStride = std::max(bufferView->stride, 4 * sizeof(float));
 				}
 			}
+			size_t vertexCount = positionCount;
+
+			size_t positionCursor = 0;
+			size_t normalCursor = 0;
+			size_t uvCursor = 0;
+			size_t colorCursor = 0;
+			size_t tangentCursor = 0;
+			size_t jointsCursor = 0;
+			size_t weightsCursor = 0;
+			for (size_t j = 0; j < vertexCount; j++) {
+				Vertex vertex;
+
+				nml::vec3 vertexPosition = modelMatrix * nml::vec4(nml::vec3(position + positionCursor), 1.0f);
+				vertex.position = { vertexPosition.x, vertexPosition.y, vertexPosition.z };
+				positionCursor += (positionStride / sizeof(float));
+
+				nml::vec3 vertexNormal = (normalCount != 0) ? nml::vec3(modelMatrix * nml::vec4(nml::vec3(normal + normalCursor), 1.0f)) : nml::vec3(0.0f, 0.0f, 0.0f);
+				vertex.normal = { vertexNormal.x, vertexNormal.y, vertexNormal.z };
+				normalCursor += (normalStride / sizeof(float));
+
+				nml::vec2 vertexUV = (uvCount != 0) ? nml::vec2(uv + uvCursor) : nml::vec2(0.5f, 0.5f);
+				vertex.uv = { vertexUV.x, vertexUV.y };
+				uvCursor += (uvStride / sizeof(float));
+
+				nml::vec3 vertexColor = (colorCount != 0) ? nml::vec3(color + colorCursor) : nml::vec3(0.0f, 0.0f, 0.0f);
+				vertex.color = { vertexColor.x, vertexColor.y, vertexColor.z };
+				colorCursor += (colorStride / sizeof(float));
+
+				nml::vec4 vertexTangent = (tangentCount != 0) ? nml::vec4(tangent + tangentCursor) : nml::vec4(0.5f, 0.5f, 0.5f, 1.0f);
+				vertex.tangent = { vertexTangent.x, vertexTangent.y, vertexTangent.z, vertexTangent.w };
+				tangentCursor += (tangentStride / sizeof(float));
+
+				nml::vec4 vertexJoints = (jointsCount != 0) ? nml::vec4(static_cast<float>(joints[jointsCursor]), static_cast<float>(joints[jointsCursor + 1]), static_cast<float>(joints[jointsCursor] + 2), static_cast<float>(joints[jointsCursor + 3])) : nml::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+				vertex.joints = { vertexJoints.x, vertexJoints.y, vertexJoints.z, vertexJoints.w };
+				jointsCursor += (jointsStride / sizeof(unsigned short));
+
+				nml::vec4 vertexWeights = (weightsCount != 0) ? nml::vec4(weights + weightsCursor) : nml::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+				vertex.weights = { vertexWeights.x, vertexWeights.y, vertexWeights.z, vertexWeights.w };
+				weightsCursor += (weightsStride / sizeof(float));
+
+				primitive.mesh.vertices.push_back(vertex);
+			}
+
+			// Indices
+			cgltf_accessor* accessor = nodeMeshPrimitive.indices;
+			if (accessor != NULL) {
+				primitive.mesh.indices.reserve(accessor->count);
+				cgltf_buffer_view* bufferView = accessor->buffer_view;
+				cgltf_component_type componentType = accessor->component_type;
+				std::byte* buffer = static_cast<std::byte*>(bufferView->buffer->data);
+				switch (componentType) {
+				case cgltf_component_type_r_8:
+				{
+					int8_t* index = reinterpret_cast<int8_t*>(buffer + accessor->offset + bufferView->offset);
+					for (size_t j = 0; j < accessor->count; j++) {
+						primitive.mesh.indices.push_back(static_cast<uint32_t>(index[j]));
+					}
+					break;
+				}
+
+				case cgltf_component_type_r_8u:
+				{
+					uint8_t* index = reinterpret_cast<uint8_t*>(buffer + accessor->offset + bufferView->offset);
+					for (size_t j = 0; j < accessor->count; j++) {
+						primitive.mesh.indices.push_back(static_cast<uint32_t>(index[j]));
+					}
+					break;
+				}
+
+				case cgltf_component_type_r_16:
+				{
+					int16_t* index = reinterpret_cast<int16_t*>(buffer + accessor->offset + bufferView->offset);
+					for (size_t j = 0; j < accessor->count; j++) {
+						primitive.mesh.indices.push_back(static_cast<uint32_t>(index[j]));
+					}
+					break;
+				}
+
+				case cgltf_component_type_r_16u:
+				{
+					uint16_t* index = reinterpret_cast<uint16_t*>(buffer + accessor->offset + bufferView->offset);
+					for (size_t j = 0; j < accessor->count; j++) {
+						primitive.mesh.indices.push_back(static_cast<uint32_t>(index[j]));
+					}
+					break;
+				}
+
+				case cgltf_component_type_r_32u:
+				{
+					uint32_t* index = reinterpret_cast<uint32_t*>(buffer + accessor->offset + bufferView->offset);
+					std::copy(index, index + accessor->count, primitive.mesh.indices.begin());
+					break;
+				}
+
+				case cgltf_component_type_r_32f:
+				{
+					float* index = reinterpret_cast<float*>(buffer + accessor->offset + bufferView->offset);
+					for (size_t j = 0; j < accessor->count; j++) {
+						primitive.mesh.indices.push_back(static_cast<uint32_t>(index[j]));
+					}
+					break;
+				}
+
+				default:
+					NTSHENGN_MODULE_WARNING("Index component type invalid for model file \"" + filePath + "\".");
+				}
+			}
+
+			// Tangents
+			if ((tangentCount == 0) && (uvCount != 0) && (primitive.mesh.indices.size() != 0)) {
+				calculateTangents(primitive.mesh);
+			}
+
+			model.primitives.push_back(primitive);
 		}
+	}
+
+	for (size_t i = 0; i < node->children_count; i++) {
+		loadGltfNode(filePath, model, node->children[i], modelMatrix);
 	}
 }
 
