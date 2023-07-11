@@ -1,3 +1,3 @@
-# NutshellEngine-AssetLoaderModule
+# NutshellEngine-AssetLoaderModule - Multi
 
-NutshellEngine's Asset Loader Module resources.
+NutshellEngine Asset Loader Module loading multiple types of file.
