@@ -63,6 +63,91 @@ NtshEngn::Model NtshEngn::AssetLoaderModule::loadModel(const std::string& filePa
 	return newModel;
 }
 
+void NtshEngn::AssetLoaderModule::calculateTangents(Mesh& mesh) {
+	std::vector<nml::vec3> tan1(mesh.vertices.size());
+	std::vector<nml::vec3> tan2(mesh.vertices.size());
+	for (size_t i = 0; i < mesh.indices.size(); i += 3) {
+		NtshEngn::Vertex& vertex0 = mesh.vertices[mesh.indices[i]];
+		NtshEngn::Vertex& vertex1 = mesh.vertices[mesh.indices[i + 1]];
+		NtshEngn::Vertex& vertex2 = mesh.vertices[mesh.indices[i + 2]];
+
+		const nml::vec3 dPos1 = nml::vec3(vertex1.position.data()) - nml::vec3(vertex0.position.data());
+		const nml::vec3 dPos2 = nml::vec3(vertex2.position.data()) - nml::vec3(vertex0.position.data());
+
+		const nml::vec2 dUV1 = nml::vec2(vertex1.uv.data()) - nml::vec2(vertex0.uv.data());
+		const nml::vec2 dUV2 = nml::vec2(vertex2.uv.data()) - nml::vec2(vertex0.uv.data());
+
+		const float r = 1.0f / (dUV1.x * dUV2.y - dUV1.y * dUV2.x);
+
+		const nml::vec3 uDir = (dPos1 * dUV2.y - dPos2 * dUV1.y) * r;
+		const nml::vec3 vDir = (dPos2 * dUV1.x - dPos1 * dUV2.x) * r;
+
+		tan1[mesh.indices[i]] += uDir;
+		tan1[mesh.indices[i + 1]] += uDir;
+		tan1[mesh.indices[i + 2]] += uDir;
+
+		tan2[mesh.indices[i]] += vDir;
+		tan2[mesh.indices[i + 1]] += vDir;
+		tan2[mesh.indices[i + 2]] += vDir;
+	}
+
+	for (size_t i = 0; i < mesh.vertices.size(); i++) {
+		const nml::vec3 n = mesh.vertices[i].normal.data();
+		const nml::vec3 t = tan1[i].data();
+
+		const nml::vec4 tangent = nml::vec4(nml::normalize(t - n * nml::dot(n, t)),
+			(nml::dot(nml::cross(n, t), tan2[i]) < 0.0f) ? -1.0f : 1.0f);
+
+		mesh.vertices[i].tangent = { tangent.x, tangent.y, tangent.z, tangent.w };
+	}
+}
+
+std::array<std::array<float, 3>, 2> NtshEngn::AssetLoaderModule::calculateAABB(const Mesh& mesh) {
+	nml::vec3 min = nml::vec3(std::numeric_limits<float>::max());
+	nml::vec3 max = nml::vec3(std::numeric_limits<float>::lowest());
+	for (const NtshEngn::Vertex& vertex : mesh.vertices) {
+		if (vertex.position[0] < min.x) {
+			min.x = vertex.position[0];
+		}
+		if (vertex.position[0] > max.x) {
+			max.x = vertex.position[0];
+		}
+
+		if (vertex.position[1] < min.y) {
+			min.y = vertex.position[1];
+		}
+		if (vertex.position[1] > max.y) {
+			max.y = vertex.position[1];
+		}
+
+		if (vertex.position[2] < min.z) {
+			min.z = vertex.position[2];
+		}
+		if (vertex.position[2] > max.z) {
+			max.z = vertex.position[2];
+		}
+	}
+
+	const float epsilon = 0.0001f;
+
+	if (min.x == max.x) {
+		min.x -= epsilon;
+		max.x += epsilon;
+	}
+
+	if (min.y == max.y) {
+		min.y -= epsilon;
+		max.y += epsilon;
+	}
+
+	if (min.z == max.z) {
+		min.z -= epsilon;
+		max.z += epsilon;
+	}
+
+	return { std::array<float, 3>{ min.x, min.y, min.z }, { max.x, max.y, max.z } };
+}
+
 void NtshEngn::AssetLoaderModule::loadSoundWav(const std::string& filePath, Sound& sound) {
 	char buffer[4];
 	int64_t tmp = 0;

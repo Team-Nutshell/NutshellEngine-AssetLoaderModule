@@ -17,6 +17,11 @@ namespace NtshEngn {
 		// Loads the model in file at path filePath
 		Model loadModel(const std::string& filePath);
 
+		// Calculate tangents for mesh
+		void calculateTangents(Mesh& mesh);
+		// Calculate and return the mesh's AABB
+		std::array<std::array<float, 3>, 2> calculateAABB(const Mesh& mesh);
+
 	private:
 		void loadSoundWav(const std::string& filePath, Sound& sound);
 
