@@ -5,7 +5,7 @@ namespace NtshEngn {
 
 	class AssetLoaderModule : public AssetLoaderModuleInterface {
 	public:
-		AssetLoaderModule() : AssetLoaderModuleInterface("NutshellEngine Default Asset Loader Module") {}
+		AssetLoaderModule() : AssetLoaderModuleInterface("NutshellEngine Multi Asset Loader Module") {}
 
 		// Loads the sound in file at path filePath
 		Sound loadSound(const std::string& filePath);
@@ -13,6 +13,11 @@ namespace NtshEngn {
 		Image loadImage(const std::string& filePath);
 		// Loads the model in file at path filePath
 		Model loadModel(const std::string& filePath);
+
+	private:
+		void loadSoundWav(const std::string& filePath, Sound& sound);
+
+		void loadModelObj(const std::string& filePath, Model& model);
 	};
 
 }
