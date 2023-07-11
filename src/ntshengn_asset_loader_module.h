@@ -1,5 +1,8 @@
 #pragma once
 #include "../Common/module_interfaces/ntshengn_asset_loader_module_interface.h"
+#include "../external/cgltf/cgltf.h"
+#include "../external/nml/include/nml.h"
+#include <vector>
 
 namespace NtshEngn {
 
@@ -20,6 +23,12 @@ namespace NtshEngn {
 		void loadImageStb(const std::string& filePath, Image& image);
 
 		void loadModelObj(const std::string& filePath, Model& model);
+
+		void loadModelGltf(const std::string& filePath, Model& model);
+		void loadGltfNode(const std::string& filePath, Model& model, cgltf_node* node, nml::mat4& modelMatrix);
+
+	private:
+		std::vector<Image> m_internalImages;
 	};
 
 }

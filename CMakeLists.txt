@@ -45,6 +45,8 @@ else()
 	FetchContent_MakeAvailable(Module)
 endif()
 
+add_subdirectory(external/nml)
+
 list(APPEND NTSHENGN_DEFINES NTSHENGN_CURRENT_MODULE_ASSET_LOADER)
 
 set(MODULE_SOURCES
@@ -59,12 +61,14 @@ add_library(${PROJECT_NAME} SHARED ${SOURCES} ${HEADERS})
 
 target_include_directories(${PROJECT_NAME}
 	PRIVATE
+		external/cgltf
 		external/stb)
 
 target_link_libraries(${PROJECT_NAME}
 	PRIVATE
 		NutshellEngine::Module
-		NutshellEngine::Common)
+		NutshellEngine::Common
+		nml)
 
 target_compile_options(${PROJECT_NAME}
 	PRIVATE
