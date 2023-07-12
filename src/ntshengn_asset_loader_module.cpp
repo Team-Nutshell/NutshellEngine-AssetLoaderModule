@@ -677,14 +677,19 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 							m_internalImages[baseColorImage->uri] = image;
 						}
 						primitive.material.diffuseTexture.image = &m_internalImages[baseColorImage->uri];
-						primitive.material.diffuseTexture.imageSampler.magFilter = m_gltfFilterToImageSamplerFilter[baseColorTexture->sampler->mag_filter];
-						primitive.material.diffuseTexture.imageSampler.minFilter = m_gltfFilterToImageSamplerFilter[baseColorTexture->sampler->min_filter];
-						primitive.material.diffuseTexture.imageSampler.mipmapFilter = m_gltfFilterToImageSamplerFilterMipMap[baseColorTexture->sampler->min_filter];
-						primitive.material.diffuseTexture.imageSampler.addressModeU = m_gltfFilterToImageSamplerAddressMode[baseColorTexture->sampler->wrap_s];
-						primitive.material.diffuseTexture.imageSampler.addressModeV = m_gltfFilterToImageSamplerAddressMode[baseColorTexture->sampler->wrap_t];
-						primitive.material.diffuseTexture.imageSampler.addressModeW = ImageSamplerAddressMode::ClampToEdge;
-						primitive.material.diffuseTexture.imageSampler.borderColor = ImageSamplerBorderColor::IntOpaqueBlack;
-						primitive.material.diffuseTexture.imageSampler.anisotropyLevel = 16.0f;
+						if (baseColorTexture->sampler != NULL) {
+							primitive.material.diffuseTexture.imageSampler.magFilter = m_gltfFilterToImageSamplerFilter[baseColorTexture->sampler->mag_filter];
+							primitive.material.diffuseTexture.imageSampler.minFilter = m_gltfFilterToImageSamplerFilter[baseColorTexture->sampler->min_filter];
+							primitive.material.diffuseTexture.imageSampler.mipmapFilter = m_gltfFilterToImageSamplerFilterMipMap[baseColorTexture->sampler->min_filter];
+							primitive.material.diffuseTexture.imageSampler.addressModeU = m_gltfFilterToImageSamplerAddressMode[baseColorTexture->sampler->wrap_s];
+							primitive.material.diffuseTexture.imageSampler.addressModeV = m_gltfFilterToImageSamplerAddressMode[baseColorTexture->sampler->wrap_t];
+							primitive.material.diffuseTexture.imageSampler.addressModeW = ImageSamplerAddressMode::ClampToEdge;
+							primitive.material.diffuseTexture.imageSampler.borderColor = ImageSamplerBorderColor::IntOpaqueBlack;
+							primitive.material.diffuseTexture.imageSampler.anisotropyLevel = 16.0f;
+						}
+						else {
+							primitive.material.diffuseTexture.imageSampler = trilinearSampler;
+						}
 					}
 					else if (baseColorFactor != NULL) {
 						std::string mapKey = "srgb" + std::to_string(baseColorFactor[0]) + std::to_string(baseColorFactor[1]) + std::to_string(baseColorFactor[2]) + std::to_string(baseColorFactor[3]);
@@ -723,14 +728,19 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 						}
 						primitive.material.metalnessTexture.image = &m_internalImages[metallicRoughnessImage->uri];
 						primitive.material.roughnessTexture.image = primitive.material.metalnessTexture.image;
-						primitive.material.metalnessTexture.imageSampler.magFilter = m_gltfFilterToImageSamplerFilter[metallicRoughnessTexture->sampler->mag_filter];
-						primitive.material.metalnessTexture.imageSampler.minFilter = m_gltfFilterToImageSamplerFilter[metallicRoughnessTexture->sampler->min_filter];
-						primitive.material.metalnessTexture.imageSampler.mipmapFilter = m_gltfFilterToImageSamplerFilterMipMap[metallicRoughnessTexture->sampler->min_filter];
-						primitive.material.metalnessTexture.imageSampler.addressModeU = m_gltfFilterToImageSamplerAddressMode[metallicRoughnessTexture->sampler->wrap_s];
-						primitive.material.metalnessTexture.imageSampler.addressModeV = m_gltfFilterToImageSamplerAddressMode[metallicRoughnessTexture->sampler->wrap_t];
-						primitive.material.metalnessTexture.imageSampler.addressModeW = ImageSamplerAddressMode::ClampToEdge;
-						primitive.material.metalnessTexture.imageSampler.borderColor = ImageSamplerBorderColor::IntOpaqueBlack;
-						primitive.material.metalnessTexture.imageSampler.anisotropyLevel = 16.0f;
+						if (metallicRoughnessTexture->sampler != NULL) {
+							primitive.material.metalnessTexture.imageSampler.magFilter = m_gltfFilterToImageSamplerFilter[metallicRoughnessTexture->sampler->mag_filter];
+							primitive.material.metalnessTexture.imageSampler.minFilter = m_gltfFilterToImageSamplerFilter[metallicRoughnessTexture->sampler->min_filter];
+							primitive.material.metalnessTexture.imageSampler.mipmapFilter = m_gltfFilterToImageSamplerFilterMipMap[metallicRoughnessTexture->sampler->min_filter];
+							primitive.material.metalnessTexture.imageSampler.addressModeU = m_gltfFilterToImageSamplerAddressMode[metallicRoughnessTexture->sampler->wrap_s];
+							primitive.material.metalnessTexture.imageSampler.addressModeV = m_gltfFilterToImageSamplerAddressMode[metallicRoughnessTexture->sampler->wrap_t];
+							primitive.material.metalnessTexture.imageSampler.addressModeW = ImageSamplerAddressMode::ClampToEdge;
+							primitive.material.metalnessTexture.imageSampler.borderColor = ImageSamplerBorderColor::IntOpaqueBlack;
+							primitive.material.metalnessTexture.imageSampler.anisotropyLevel = 16.0f;
+						}
+						else {
+							primitive.material.metalnessTexture.imageSampler = trilinearSampler;
+						}
 						primitive.material.roughnessTexture.imageSampler = primitive.material.metalnessTexture.imageSampler;
 					}
 					else {
@@ -770,14 +780,19 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 						m_internalImages[normalImage->uri] = image;
 					}
 					primitive.material.normalTexture.image = &m_internalImages[normalImage->uri];
-					primitive.material.normalTexture.imageSampler.magFilter = m_gltfFilterToImageSamplerFilter[normalTexture->sampler->mag_filter];
-					primitive.material.normalTexture.imageSampler.minFilter = m_gltfFilterToImageSamplerFilter[normalTexture->sampler->min_filter];
-					primitive.material.normalTexture.imageSampler.mipmapFilter = m_gltfFilterToImageSamplerFilterMipMap[normalTexture->sampler->min_filter];
-					primitive.material.normalTexture.imageSampler.addressModeU = m_gltfFilterToImageSamplerAddressMode[normalTexture->sampler->wrap_s];
-					primitive.material.normalTexture.imageSampler.addressModeV = m_gltfFilterToImageSamplerAddressMode[normalTexture->sampler->wrap_t];
-					primitive.material.normalTexture.imageSampler.addressModeW = ImageSamplerAddressMode::ClampToEdge;
-					primitive.material.normalTexture.imageSampler.borderColor = ImageSamplerBorderColor::IntOpaqueBlack;
-					primitive.material.normalTexture.imageSampler.anisotropyLevel = 16.0f;
+					if (normalTexture->sampler != NULL) {
+						primitive.material.normalTexture.imageSampler.magFilter = m_gltfFilterToImageSamplerFilter[normalTexture->sampler->mag_filter];
+						primitive.material.normalTexture.imageSampler.minFilter = m_gltfFilterToImageSamplerFilter[normalTexture->sampler->min_filter];
+						primitive.material.normalTexture.imageSampler.mipmapFilter = m_gltfFilterToImageSamplerFilterMipMap[normalTexture->sampler->min_filter];
+						primitive.material.normalTexture.imageSampler.addressModeU = m_gltfFilterToImageSamplerAddressMode[normalTexture->sampler->wrap_s];
+						primitive.material.normalTexture.imageSampler.addressModeV = m_gltfFilterToImageSamplerAddressMode[normalTexture->sampler->wrap_t];
+						primitive.material.normalTexture.imageSampler.addressModeW = ImageSamplerAddressMode::ClampToEdge;
+						primitive.material.normalTexture.imageSampler.borderColor = ImageSamplerBorderColor::IntOpaqueBlack;
+						primitive.material.normalTexture.imageSampler.anisotropyLevel = 16.0f;
+					}
+					else {
+						primitive.material.normalTexture.imageSampler = trilinearSampler;
+					}
 				}
 
 				// Emissive texture
@@ -794,14 +809,19 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 						m_internalImages[emissiveImage->uri] = image;
 					}
 					primitive.material.emissiveTexture.image = &m_internalImages[emissiveImage->uri];
-					primitive.material.emissiveTexture.imageSampler.magFilter = m_gltfFilterToImageSamplerFilter[emissiveTexture->sampler->mag_filter];
-					primitive.material.emissiveTexture.imageSampler.minFilter = m_gltfFilterToImageSamplerFilter[emissiveTexture->sampler->min_filter];
-					primitive.material.emissiveTexture.imageSampler.mipmapFilter = m_gltfFilterToImageSamplerFilterMipMap[emissiveTexture->sampler->min_filter];
-					primitive.material.emissiveTexture.imageSampler.addressModeU = m_gltfFilterToImageSamplerAddressMode[emissiveTexture->sampler->wrap_s];
-					primitive.material.emissiveTexture.imageSampler.addressModeV = m_gltfFilterToImageSamplerAddressMode[emissiveTexture->sampler->wrap_t];
-					primitive.material.emissiveTexture.imageSampler.addressModeW = ImageSamplerAddressMode::ClampToEdge;
-					primitive.material.emissiveTexture.imageSampler.borderColor = ImageSamplerBorderColor::IntOpaqueBlack;
-					primitive.material.emissiveTexture.imageSampler.anisotropyLevel = 16.0f;
+					if (emissiveTexture->sampler != NULL) {
+						primitive.material.emissiveTexture.imageSampler.magFilter = m_gltfFilterToImageSamplerFilter[emissiveTexture->sampler->mag_filter];
+						primitive.material.emissiveTexture.imageSampler.minFilter = m_gltfFilterToImageSamplerFilter[emissiveTexture->sampler->min_filter];
+						primitive.material.emissiveTexture.imageSampler.mipmapFilter = m_gltfFilterToImageSamplerFilterMipMap[emissiveTexture->sampler->min_filter];
+						primitive.material.emissiveTexture.imageSampler.addressModeU = m_gltfFilterToImageSamplerAddressMode[emissiveTexture->sampler->wrap_s];
+						primitive.material.emissiveTexture.imageSampler.addressModeV = m_gltfFilterToImageSamplerAddressMode[emissiveTexture->sampler->wrap_t];
+						primitive.material.emissiveTexture.imageSampler.addressModeW = ImageSamplerAddressMode::ClampToEdge;
+						primitive.material.emissiveTexture.imageSampler.borderColor = ImageSamplerBorderColor::IntOpaqueBlack;
+						primitive.material.emissiveTexture.imageSampler.anisotropyLevel = 16.0f;
+					}
+					else {
+						primitive.material.emissiveTexture.imageSampler = trilinearSampler;
+					}
 				}
 				else if (emissiveFactor != NULL) {
 					std::string mapKey = "srgb" + std::to_string(emissiveFactor[0]) + std::to_string(emissiveFactor[1]) + std::to_string(emissiveFactor[2]);
@@ -840,14 +860,19 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 						m_internalImages[occlusionImage->uri] = image;
 					}
 					primitive.material.occlusionTexture.image = &m_internalImages[occlusionImage->uri];
-					primitive.material.occlusionTexture.imageSampler.magFilter = m_gltfFilterToImageSamplerFilter[occlusionTexture->sampler->mag_filter];
-					primitive.material.occlusionTexture.imageSampler.minFilter = m_gltfFilterToImageSamplerFilter[occlusionTexture->sampler->min_filter];
-					primitive.material.occlusionTexture.imageSampler.mipmapFilter = m_gltfFilterToImageSamplerFilterMipMap[occlusionTexture->sampler->min_filter];
-					primitive.material.occlusionTexture.imageSampler.addressModeU = m_gltfFilterToImageSamplerAddressMode[occlusionTexture->sampler->wrap_s];
-					primitive.material.occlusionTexture.imageSampler.addressModeV = m_gltfFilterToImageSamplerAddressMode[occlusionTexture->sampler->wrap_t];
-					primitive.material.occlusionTexture.imageSampler.addressModeW = ImageSamplerAddressMode::ClampToEdge;
-					primitive.material.occlusionTexture.imageSampler.borderColor = ImageSamplerBorderColor::IntOpaqueBlack;
-					primitive.material.occlusionTexture.imageSampler.anisotropyLevel = 16.0f;
+					if (occlusionTexture->sampler != NULL) {
+						primitive.material.occlusionTexture.imageSampler.magFilter = m_gltfFilterToImageSamplerFilter[occlusionTexture->sampler->mag_filter];
+						primitive.material.occlusionTexture.imageSampler.minFilter = m_gltfFilterToImageSamplerFilter[occlusionTexture->sampler->min_filter];
+						primitive.material.occlusionTexture.imageSampler.mipmapFilter = m_gltfFilterToImageSamplerFilterMipMap[occlusionTexture->sampler->min_filter];
+						primitive.material.occlusionTexture.imageSampler.addressModeU = m_gltfFilterToImageSamplerAddressMode[occlusionTexture->sampler->wrap_s];
+						primitive.material.occlusionTexture.imageSampler.addressModeV = m_gltfFilterToImageSamplerAddressMode[occlusionTexture->sampler->wrap_t];
+						primitive.material.occlusionTexture.imageSampler.addressModeW = ImageSamplerAddressMode::ClampToEdge;
+						primitive.material.occlusionTexture.imageSampler.borderColor = ImageSamplerBorderColor::IntOpaqueBlack;
+						primitive.material.occlusionTexture.imageSampler.anisotropyLevel = 16.0f;
+					}
+					else {
+						primitive.material.occlusionTexture.imageSampler = trilinearSampler;
+					}
 				}
 			}
 
