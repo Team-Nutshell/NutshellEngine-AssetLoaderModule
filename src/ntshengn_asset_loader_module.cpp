@@ -453,7 +453,7 @@ void NtshEngn::AssetLoaderModule::loadModelGltf(const std::string& filePath, Mod
 	}
 }
 
-void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Model& model, cgltf_node* node, nml::mat4& modelMatrix) {
+void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Model& model, cgltf_node* node, nml::mat4 modelMatrix) {
 	if (node->has_matrix) {
 		modelMatrix *= nml::mat4(node->matrix);
 	}

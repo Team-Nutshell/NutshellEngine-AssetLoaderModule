@@ -31,7 +31,7 @@ namespace NtshEngn {
 		void loadModelObj(const std::string& filePath, Model& model);
 
 		void loadModelGltf(const std::string& filePath, Model& model);
-		void loadGltfNode(const std::string& filePath, Model& model, cgltf_node* node, nml::mat4& modelMatrix);
+		void loadGltfNode(const std::string& filePath, Model& model, cgltf_node* node, nml::mat4 modelMatrix);
 
 	private:
 		std::unordered_map<std::string, Image> m_internalImages;
