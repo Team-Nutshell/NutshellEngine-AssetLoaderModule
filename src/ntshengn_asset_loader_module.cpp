@@ -39,7 +39,7 @@ NtshEngn::Image NtshEngn::AssetLoaderModule::loadImage(const std::string& filePa
 		loadImageStb(filePath, newImage);
 	}
 	else {
-		NTSHENGN_MODULE_WARNING("Sound file extension \"." + extension + "\" not supported.");
+		NTSHENGN_MODULE_WARNING("Image file extension \"." + extension + "\" not supported.");
 	}
 
 	return newImage;
