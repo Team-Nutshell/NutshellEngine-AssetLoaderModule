@@ -36,6 +36,15 @@ namespace NtshEngn {
 	private:
 		std::unordered_map<std::string, Image> m_internalImages;
 
+		ImageSampler trilinearSampler = { ImageSamplerFilter::Linear,
+			ImageSamplerFilter::Linear,
+			ImageSamplerFilter::Linear,
+			ImageSamplerAddressMode::ClampToEdge,
+			ImageSamplerAddressMode::ClampToEdge,
+			ImageSamplerAddressMode::ClampToEdge,
+			ImageSamplerBorderColor::IntOpaqueBlack,
+			16.0f
+		};
 		ImageSampler nearestSampler = { ImageSamplerFilter::Nearest,
 			ImageSamplerFilter::Nearest,
 			ImageSamplerFilter::Nearest,
