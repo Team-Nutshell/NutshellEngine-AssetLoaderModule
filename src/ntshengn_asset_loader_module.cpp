@@ -10,6 +10,7 @@
 #include "../external/stb/stb_image.h"
 #include <cstddef>
 #include <cmath>
+#include <iterator>
 #include <algorithm>
 
 NtshEngn::Sound NtshEngn::AssetLoaderModule::loadSound(const std::string& filePath) {
@@ -635,7 +636,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 				case cgltf_component_type_r_32u:
 				{
 					uint32_t* index = reinterpret_cast<uint32_t*>(buffer + accessor->offset + bufferView->offset);
-					std::copy(index, index + accessor->count, primitive.mesh.indices.begin());
+					std::copy(index, index + accessor->count, std::back_inserter(primitive.mesh.indices));
 					break;
 				}
 
