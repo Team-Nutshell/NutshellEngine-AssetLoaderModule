@@ -27,6 +27,7 @@ namespace NtshEngn {
 		void loadSoundWav(const std::string& filePath, Sound& sound);
 
 		void loadImageStb(const std::string& filePath, Image& image);
+		void loadImageFromMemory(void* data, size_t size, Image& image);
 
 		void loadModelObj(const std::string& filePath, Model& model);
 
