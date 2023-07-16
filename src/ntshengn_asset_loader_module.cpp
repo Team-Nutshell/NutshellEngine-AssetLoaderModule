@@ -682,6 +682,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 				calculateTangents(primitive.mesh);
 			}
 
+			// Material
 			cgltf_material* primitiveMaterial = nodeMeshPrimitive.material;
 			if (primitiveMaterial != NULL) {
 				if (primitiveMaterial->has_pbr_metallic_roughness) {
@@ -1007,6 +1008,11 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 					else {
 						primitive.material.occlusionTexture.imageSampler = trilinearSampler;
 					}
+				}
+
+				if (primitiveMaterial->alpha_mode == cgltf_alpha_mode_mask) {
+					// Alpha cutoff
+					primitive.material.alphaCutoff = primitiveMaterial->alpha_cutoff;
 				}
 			}
 
