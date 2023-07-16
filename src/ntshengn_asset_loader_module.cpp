@@ -1010,13 +1010,13 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 					}
 				}
 
+				// Alpha cutoff
 				if (primitiveMaterial->alpha_mode == cgltf_alpha_mode_mask) {
-					// Alpha cutoff
 					primitive.material.alphaCutoff = primitiveMaterial->alpha_cutoff;
 				}
 
+				// Index of refraction
 				if (primitiveMaterial->has_ior) {
-					// Index of refraction
 					primitive.material.indexOfRefraction = primitiveMaterial->ior.ior;
 				}
 			}
