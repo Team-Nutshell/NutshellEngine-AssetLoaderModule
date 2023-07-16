@@ -1014,6 +1014,11 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 					// Alpha cutoff
 					primitive.material.alphaCutoff = primitiveMaterial->alpha_cutoff;
 				}
+
+				if (primitiveMaterial->has_ior) {
+					// Index of refraction
+					primitive.material.indexOfRefraction = primitiveMaterial->ior.ior;
+				}
 			}
 
 			model.primitives.push_back(primitive);
