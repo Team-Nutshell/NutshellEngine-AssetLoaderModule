@@ -68,9 +68,9 @@ void NtshEngn::AssetLoaderModule::calculateTangents(Mesh& mesh) {
 	std::vector<nml::vec3> tan1(mesh.vertices.size());
 	std::vector<nml::vec3> tan2(mesh.vertices.size());
 	for (size_t i = 0; i < mesh.indices.size(); i += 3) {
-		NtshEngn::Vertex& vertex0 = mesh.vertices[mesh.indices[i]];
-		NtshEngn::Vertex& vertex1 = mesh.vertices[mesh.indices[i + 1]];
-		NtshEngn::Vertex& vertex2 = mesh.vertices[mesh.indices[i + 2]];
+		const NtshEngn::Vertex& vertex0 = mesh.vertices[mesh.indices[i]];
+		const NtshEngn::Vertex& vertex1 = mesh.vertices[mesh.indices[i + 1]];
+		const NtshEngn::Vertex& vertex2 = mesh.vertices[mesh.indices[i + 2]];
 
 		const nml::vec3 dPos1 = nml::vec3(vertex1.position.data()) - nml::vec3(vertex0.position.data());
 		const nml::vec3 dPos2 = nml::vec3(vertex2.position.data()) - nml::vec3(vertex0.position.data());
@@ -96,10 +96,10 @@ void NtshEngn::AssetLoaderModule::calculateTangents(Mesh& mesh) {
 		const nml::vec3 n = mesh.vertices[i].normal.data();
 		const nml::vec3 t = tan1[i];
 
-		const nml::vec4 tangent = nml::vec4(nml::normalize(t - n * nml::dot(n, t)),
-			(nml::dot(nml::cross(n, t), tan2[i]) < 0.0f) ? -1.0f : 1.0f);
+		const nml::vec3 tangent = nml::normalize(t - n * nml::dot(n, t));
+		const float tangentHandedness = (nml::dot(nml::cross(n, t), tan2[i]) < 0.0f) ? -1.0f : 1.0f;
 
-		mesh.vertices[i].tangent = { tangent.x, tangent.y, tangent.z, tangent.w };
+		mesh.vertices[i].tangent = { tangent.x, tangent.y, tangent.z, tangentHandedness };
 	}
 }
 
@@ -585,7 +585,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 				vertex.position = { vertexPosition.x, vertexPosition.y, vertexPosition.z };
 				positionCursor += (positionStride / sizeof(float));
 
-				nml::vec3 vertexNormal = (normalCount != 0) ? nml::vec3(modelMatrix * nml::vec4(nml::vec3(normal + normalCursor), 1.0f)) : nml::vec3(0.0f, 0.0f, 0.0f);
+				nml::vec3 vertexNormal = (normalCount != 0) ? nml::normalize(nml::vec3(nml::transpose(nml::inverse(modelMatrix)) * nml::vec4(nml::vec3(normal + normalCursor), 1.0f))) : nml::vec3(0.0f, 0.0f, 0.0f);
 				vertex.normal = { vertexNormal.x, vertexNormal.y, vertexNormal.z };
 				normalCursor += (normalStride / sizeof(float));
 
@@ -678,8 +678,13 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 			}
 
 			// Tangents
-			if ((tangentCount == 0) && (uvCount != 0) && (primitive.mesh.indices.size() != 0)) {
+			if ((tangentCount == 0) && (uvCount != 0) && (normalCount != 0) && (primitive.mesh.indices.size() != 0)) {
 				calculateTangents(primitive.mesh);
+
+				// Invert tangent handedness
+				for (Vertex& vertex : primitive.mesh.vertices) {
+					vertex.tangent[3] *= -1.0f;
+				}
 			}
 
 			// Material
