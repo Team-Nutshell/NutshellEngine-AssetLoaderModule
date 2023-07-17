@@ -94,7 +94,7 @@ void NtshEngn::AssetLoaderModule::calculateTangents(Mesh& mesh) {
 
 	for (size_t i = 0; i < mesh.vertices.size(); i++) {
 		const nml::vec3 n = mesh.vertices[i].normal.data();
-		const nml::vec3 t = tan1[i].data();
+		const nml::vec3 t = tan1[i];
 
 		const nml::vec4 tangent = nml::vec4(nml::normalize(t - n * nml::dot(n, t)),
 			(nml::dot(nml::cross(n, t), tan2[i]) < 0.0f) ? -1.0f : 1.0f);
@@ -712,7 +712,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 									image.colorSpace = ImageColorSpace::SRGB;
 								}
 								else {
-									NTSHENGN_MODULE_WARNING("Invalid Base64 data when loading glTF embedded texture.");
+									NTSHENGN_MODULE_WARNING("Invalid Base64 data when loading glTF embedded texture for model file \"" + filePath + "\" (base color texture).");
 								}
 								delete[] decodedData;
 							}
@@ -784,7 +784,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 									image.colorSpace = ImageColorSpace::Linear;
 								}
 								else {
-									NTSHENGN_MODULE_WARNING("Invalid Base64 data when loading glTF embedded texture.");
+									NTSHENGN_MODULE_WARNING("Invalid Base64 data when loading glTF embedded texture for model file \"" + filePath + "\" (metallic roughness texture).");
 								}
 								delete[] decodedData;
 							}
@@ -859,7 +859,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 								image.colorSpace = ImageColorSpace::Linear;
 							}
 							else {
-								NTSHENGN_MODULE_WARNING("Invalid Base64 data when loading glTF embedded texture.");
+								NTSHENGN_MODULE_WARNING("Invalid Base64 data when loading glTF embedded texture for model file \"" + filePath + "\" (normal texture).");
 							}
 							delete[] decodedData;
 						}
@@ -910,7 +910,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 								image.colorSpace = ImageColorSpace::SRGB;
 							}
 							else {
-								NTSHENGN_MODULE_WARNING("Invalid Base64 data when loading glTF embedded texture.");
+								NTSHENGN_MODULE_WARNING("Invalid Base64 data when loading glTF embedded texture for model file \"" + filePath + "\" (emissive texture).");
 							}
 							delete[] decodedData;
 						}
@@ -983,7 +983,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 								image.colorSpace = ImageColorSpace::Linear;
 							}
 							else {
-								NTSHENGN_MODULE_WARNING("Invalid Base64 data when loading glTF embedded texture.");
+								NTSHENGN_MODULE_WARNING("Invalid Base64 data when loading glTF embedded texture for model file \"" + filePath + "\" (occlusion texture).");
 							}
 							delete[] decodedData;
 						}
