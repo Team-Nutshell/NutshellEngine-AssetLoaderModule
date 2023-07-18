@@ -1,7 +1,7 @@
 #pragma once
 #include "../Common/module_interfaces/ntshengn_asset_loader_module_interface.h"
+#include "../Common/utils/ntshengn_utils_math.h"
 #include "../external/cgltf/cgltf.h"
-#include "../external/nml/include/nml.h"
 #include <unordered_map>
 #include <string>
 
@@ -32,7 +32,7 @@ namespace NtshEngn {
 		void loadModelObj(const std::string& filePath, Model& model);
 
 		void loadModelGltf(const std::string& filePath, Model& model);
-		void loadGltfNode(const std::string& filePath, Model& model, cgltf_node* node, nml::mat4 modelMatrix);
+		void loadGltfNode(const std::string& filePath, Model& model, cgltf_node* node, Math::mat4 modelMatrix);
 
 	private:
 		std::unordered_map<std::string, Image> m_internalImages;

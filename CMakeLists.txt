@@ -45,8 +45,6 @@ else()
 	FetchContent_MakeAvailable(Module)
 endif()
 
-add_subdirectory(external/nml)
-
 list(APPEND NTSHENGN_DEFINES NTSHENGN_CURRENT_MODULE_ASSET_LOADER)
 
 set(MODULE_SOURCES
@@ -67,8 +65,7 @@ target_include_directories(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
 	PRIVATE
 		NutshellEngine::Module
-		NutshellEngine::Common
-		nml)
+		NutshellEngine::Common)
 
 target_compile_options(${PROJECT_NAME}
 	PRIVATE
