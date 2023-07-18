@@ -65,23 +65,23 @@ NtshEngn::Model NtshEngn::AssetLoaderModule::loadModel(const std::string& filePa
 }
 
 void NtshEngn::AssetLoaderModule::calculateTangents(Mesh& mesh) {
-	std::vector<nml::vec3> tan1(mesh.vertices.size());
-	std::vector<nml::vec3> tan2(mesh.vertices.size());
+	std::vector<Math::vec3> tan1(mesh.vertices.size());
+	std::vector<Math::vec3> tan2(mesh.vertices.size());
 	for (size_t i = 0; i < mesh.indices.size(); i += 3) {
 		const NtshEngn::Vertex& vertex0 = mesh.vertices[mesh.indices[i]];
 		const NtshEngn::Vertex& vertex1 = mesh.vertices[mesh.indices[i + 1]];
 		const NtshEngn::Vertex& vertex2 = mesh.vertices[mesh.indices[i + 2]];
 
-		const nml::vec3 dPos1 = nml::vec3(vertex1.position.data()) - nml::vec3(vertex0.position.data());
-		const nml::vec3 dPos2 = nml::vec3(vertex2.position.data()) - nml::vec3(vertex0.position.data());
+		const Math::vec3 dPos1 = Math::vec3(vertex1.position.data()) - Math::vec3(vertex0.position.data());
+		const Math::vec3 dPos2 = Math::vec3(vertex2.position.data()) - Math::vec3(vertex0.position.data());
 
-		const nml::vec2 dUV1 = nml::vec2(vertex1.uv.data()) - nml::vec2(vertex0.uv.data());
-		const nml::vec2 dUV2 = nml::vec2(vertex2.uv.data()) - nml::vec2(vertex0.uv.data());
+		const Math::vec2 dUV1 = Math::vec2(vertex1.uv.data()) - Math::vec2(vertex0.uv.data());
+		const Math::vec2 dUV2 = Math::vec2(vertex2.uv.data()) - Math::vec2(vertex0.uv.data());
 
 		const float r = 1.0f / (dUV1.x * dUV2.y - dUV1.y * dUV2.x);
 
-		const nml::vec3 uDir = (dPos1 * dUV2.y - dPos2 * dUV1.y) * r;
-		const nml::vec3 vDir = (dPos2 * dUV1.x - dPos1 * dUV2.x) * r;
+		const Math::vec3 uDir = (dPos1 * dUV2.y - dPos2 * dUV1.y) * r;
+		const Math::vec3 vDir = (dPos2 * dUV1.x - dPos1 * dUV2.x) * r;
 
 		tan1[mesh.indices[i]] += uDir;
 		tan1[mesh.indices[i + 1]] += uDir;
@@ -93,19 +93,19 @@ void NtshEngn::AssetLoaderModule::calculateTangents(Mesh& mesh) {
 	}
 
 	for (size_t i = 0; i < mesh.vertices.size(); i++) {
-		const nml::vec3 n = mesh.vertices[i].normal.data();
-		const nml::vec3 t = tan1[i];
+		const Math::vec3 n = mesh.vertices[i].normal.data();
+		const Math::vec3 t = tan1[i];
 
-		const nml::vec3 tangent = nml::normalize(t - n * nml::dot(n, t));
-		const float tangentHandedness = (nml::dot(nml::cross(n, t), tan2[i]) < 0.0f) ? -1.0f : 1.0f;
+		const Math::vec3 tangent = Math::normalize(t - n * Math::dot(n, t));
+		const float tangentHandedness = (Math::dot(Math::cross(n, t), tan2[i]) < 0.0f) ? -1.0f : 1.0f;
 
 		mesh.vertices[i].tangent = { tangent.x, tangent.y, tangent.z, tangentHandedness };
 	}
 }
 
 std::array<std::array<float, 3>, 2> NtshEngn::AssetLoaderModule::calculateAABB(const Mesh& mesh) {
-	nml::vec3 min = nml::vec3(std::numeric_limits<float>::max());
-	nml::vec3 max = nml::vec3(std::numeric_limits<float>::lowest());
+	Math::vec3 min = Math::vec3(std::numeric_limits<float>::max());
+	Math::vec3 max = Math::vec3(std::numeric_limits<float>::lowest());
 	for (const NtshEngn::Vertex& vertex : mesh.vertices) {
 		if (vertex.position[0] < min.x) {
 			min.x = vertex.position[0];
@@ -463,7 +463,7 @@ void NtshEngn::AssetLoaderModule::loadModelGltf(const std::string& filePath, Mod
 		else {
 			cgltf_scene* scene = data->scene;
 
-			nml::mat4 modelMatrix = nml::mat4();
+			Math::mat4 modelMatrix = Math::mat4();
 
 			for (size_t i = 0; i < scene->nodes_count; i++) {
 				loadGltfNode(filePath, model, scene->nodes[i], modelMatrix);
@@ -477,19 +477,19 @@ void NtshEngn::AssetLoaderModule::loadModelGltf(const std::string& filePath, Mod
 	}
 }
 
-void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Model& model, cgltf_node* node, nml::mat4 modelMatrix) {
+void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Model& model, cgltf_node* node, Math::mat4 modelMatrix) {
 	if (node->has_matrix) {
-		modelMatrix *= nml::mat4(node->matrix);
+		modelMatrix *= Math::mat4(node->matrix);
 	}
 	else {
 		if (node->has_translation) {
-			modelMatrix *= nml::translate(nml::vec3(node->translation));
+			modelMatrix *= Math::translate(Math::vec3(node->translation));
 		}
 		if (node->has_rotation) {
-			modelMatrix *= nml::to_mat4(nml::quat(node->rotation[3], node->rotation[0], node->rotation[1], node->rotation[2]));
+			modelMatrix *= Math::to_mat4(Math::quat(node->rotation[3], node->rotation[0], node->rotation[1], node->rotation[2]));
 		}
 		if (node->has_scale) {
-			modelMatrix *= nml::scale(nml::vec3(node->scale));
+			modelMatrix *= Math::scale(Math::vec3(node->scale));
 		}
 	}
 
@@ -581,31 +581,31 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 			for (size_t j = 0; j < vertexCount; j++) {
 				Vertex vertex;
 
-				nml::vec3 vertexPosition = modelMatrix * nml::vec4(nml::vec3(position + positionCursor), 1.0f);
+				Math::vec3 vertexPosition = modelMatrix * Math::vec4(Math::vec3(position + positionCursor), 1.0f);
 				vertex.position = { vertexPosition.x, vertexPosition.y, vertexPosition.z };
 				positionCursor += (positionStride / sizeof(float));
 
-				nml::vec3 vertexNormal = (normalCount != 0) ? nml::normalize(nml::vec3(nml::transpose(nml::inverse(modelMatrix)) * nml::vec4(nml::vec3(normal + normalCursor), 1.0f))) : nml::vec3(0.0f, 0.0f, 0.0f);
+				Math::vec3 vertexNormal = (normalCount != 0) ? Math::normalize(Math::vec3(Math::transpose(Math::inverse(modelMatrix)) * Math::vec4(Math::vec3(normal + normalCursor), 1.0f))) : Math::vec3(0.0f, 0.0f, 0.0f);
 				vertex.normal = { vertexNormal.x, vertexNormal.y, vertexNormal.z };
 				normalCursor += (normalStride / sizeof(float));
 
-				nml::vec2 vertexUV = (uvCount != 0) ? nml::vec2(uv + uvCursor) : nml::vec2(0.5f, 0.5f);
+				Math::vec2 vertexUV = (uvCount != 0) ? Math::vec2(uv + uvCursor) : Math::vec2(0.5f, 0.5f);
 				vertex.uv = { vertexUV.x, vertexUV.y };
 				uvCursor += (uvStride / sizeof(float));
 
-				nml::vec3 vertexColor = (colorCount != 0) ? nml::vec3(color + colorCursor) : nml::vec3(0.0f, 0.0f, 0.0f);
+				Math::vec3 vertexColor = (colorCount != 0) ? Math::vec3(color + colorCursor) : Math::vec3(0.0f, 0.0f, 0.0f);
 				vertex.color = { vertexColor.x, vertexColor.y, vertexColor.z };
 				colorCursor += (colorStride / sizeof(float));
 
-				nml::vec4 vertexTangent = (tangentCount != 0) ? nml::vec4(tangent + tangentCursor) : nml::vec4(0.5f, 0.5f, 0.5f, 1.0f);
+				Math::vec4 vertexTangent = (tangentCount != 0) ? Math::vec4(tangent + tangentCursor) : Math::vec4(0.5f, 0.5f, 0.5f, 1.0f);
 				vertex.tangent = { vertexTangent.x, vertexTangent.y, vertexTangent.z, vertexTangent.w };
 				tangentCursor += (tangentStride / sizeof(float));
 
-				nml::vec4 vertexJoints = (jointsCount != 0) ? nml::vec4(static_cast<float>(joints[jointsCursor]), static_cast<float>(joints[jointsCursor + 1]), static_cast<float>(joints[jointsCursor] + 2), static_cast<float>(joints[jointsCursor + 3])) : nml::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+				Math::vec4 vertexJoints = (jointsCount != 0) ? Math::vec4(static_cast<float>(joints[jointsCursor]), static_cast<float>(joints[jointsCursor + 1]), static_cast<float>(joints[jointsCursor] + 2), static_cast<float>(joints[jointsCursor + 3])) : Math::vec4(0.0f, 0.0f, 0.0f, 0.0f);
 				vertex.joints = { vertexJoints.x, vertexJoints.y, vertexJoints.z, vertexJoints.w };
 				jointsCursor += (jointsStride / sizeof(unsigned short));
 
-				nml::vec4 vertexWeights = (weightsCount != 0) ? nml::vec4(weights + weightsCursor) : nml::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+				Math::vec4 vertexWeights = (weightsCount != 0) ? Math::vec4(weights + weightsCursor) : Math::vec4(0.0f, 0.0f, 0.0f, 0.0f);
 				vertex.weights = { vertexWeights.x, vertexWeights.y, vertexWeights.z, vertexWeights.w };
 				weightsCursor += (weightsStride / sizeof(float));
 
