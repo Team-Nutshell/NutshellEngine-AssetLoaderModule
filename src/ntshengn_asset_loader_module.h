@@ -13,11 +13,13 @@ namespace NtshEngn {
 		Image loadImage(const std::string& filePath);
 		// Loads the model in file at path filePath
 		Model loadModel(const std::string& filePath);
+		// Loads the font in file at path filePath
+		Font loadFont(const std::string& filePath, float fontHeight);
 
 		// Calculate tangents for mesh
 		void calculateTangents(Mesh& mesh);
 		// Calculate and return the mesh's AABB
-		std::array<std::array<float, 3>, 2> calculateAABB(const Mesh& mesh);
+		std::array<Math::vec3, 2> calculateAABB(const Mesh& mesh);
 	};
 
 }
