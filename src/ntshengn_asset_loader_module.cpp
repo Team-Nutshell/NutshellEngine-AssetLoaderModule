@@ -8,6 +8,8 @@
 #include "../external/cgltf/cgltf.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "../external/stb/stb_image.h"
+#define STB_TRUETYPE_IMPLEMENTATION
+#include "../external/stb/stb_truetype.h"
 #include <cstddef>
 #include <cmath>
 #include <iterator>
@@ -64,6 +66,20 @@ NtshEngn::Model NtshEngn::AssetLoaderModule::loadModel(const std::string& filePa
 	return newModel;
 }
 
+NtshEngn::Font NtshEngn::AssetLoaderModule::loadFont(const std::string& filePath, float fontHeight) {
+	Font newFont;
+
+	std::string extension = File::extension(filePath);
+	if (extension == "ttf") {
+		loadFontTtf(filePath, fontHeight, newFont);
+	}
+	else {
+		NTSHENGN_MODULE_WARNING("Font file extension \"." + extension + "\" not supported.");
+	}
+
+	return newFont;
+}
+
 void NtshEngn::AssetLoaderModule::calculateTangents(Mesh& mesh) {
 	std::vector<Math::vec3> tan1(mesh.vertices.size());
 	std::vector<Math::vec3> tan2(mesh.vertices.size());
@@ -72,11 +88,11 @@ void NtshEngn::AssetLoaderModule::calculateTangents(Mesh& mesh) {
 		const NtshEngn::Vertex& vertex1 = mesh.vertices[mesh.indices[i + 1]];
 		const NtshEngn::Vertex& vertex2 = mesh.vertices[mesh.indices[i + 2]];
 
-		const Math::vec3 dPos1 = Math::vec3(vertex1.position.data()) - Math::vec3(vertex0.position.data());
-		const Math::vec3 dPos2 = Math::vec3(vertex2.position.data()) - Math::vec3(vertex0.position.data());
+		const Math::vec3 dPos1 = vertex1.position - vertex0.position;
+		const Math::vec3 dPos2 = vertex2.position - vertex0.position;
 
-		const Math::vec2 dUV1 = Math::vec2(vertex1.uv.data()) - Math::vec2(vertex0.uv.data());
-		const Math::vec2 dUV2 = Math::vec2(vertex2.uv.data()) - Math::vec2(vertex0.uv.data());
+		const Math::vec2 dUV1 = vertex1.uv - vertex0.uv;
+		const Math::vec2 dUV2 = vertex2.uv - vertex0.uv;
 
 		const float r = 1.0f / (dUV1.x * dUV2.y - dUV1.y * dUV2.x);
 
@@ -93,7 +109,7 @@ void NtshEngn::AssetLoaderModule::calculateTangents(Mesh& mesh) {
 	}
 
 	for (size_t i = 0; i < mesh.vertices.size(); i++) {
-		const Math::vec3 n = mesh.vertices[i].normal.data();
+		const Math::vec3 n = mesh.vertices[i].normal;
 		const Math::vec3 t = tan1[i];
 
 		const Math::vec3 tangent = Math::normalize(t - n * Math::dot(n, t));
@@ -103,7 +119,7 @@ void NtshEngn::AssetLoaderModule::calculateTangents(Mesh& mesh) {
 	}
 }
 
-std::array<std::array<float, 3>, 2> NtshEngn::AssetLoaderModule::calculateAABB(const Mesh& mesh) {
+std::array<NtshEngn::Math::vec3, 2> NtshEngn::AssetLoaderModule::calculateAABB(const Mesh& mesh) {
 	Math::vec3 min = Math::vec3(std::numeric_limits<float>::max());
 	Math::vec3 max = Math::vec3(std::numeric_limits<float>::lowest());
 	for (const NtshEngn::Vertex& vertex : mesh.vertices) {
@@ -146,7 +162,7 @@ std::array<std::array<float, 3>, 2> NtshEngn::AssetLoaderModule::calculateAABB(c
 		max.z += epsilon;
 	}
 
-	return { std::array<float, 3>{ min.x, min.y, min.z }, { max.x, max.y, max.z } };
+	return { Math::vec3(min.x, min.y, min.z), Math::vec3(max.x, max.y, max.z) };
 }
 
 void NtshEngn::AssetLoaderModule::loadSoundWav(const std::string& filePath, Sound& sound) {
@@ -447,6 +463,45 @@ void NtshEngn::AssetLoaderModule::loadModelObj(const std::string& filePath, Mode
 	model.primitives.push_back({ mesh, {} });
 
 	file.close();
+}
+
+void NtshEngn::AssetLoaderModule::loadFontTtf(const std::string& filePath, float fontHeight, Font& font) {
+	const int width = 512;
+	const int height = 512;
+	stbtt_bakedchar backedChars[96];
+
+	unsigned char pixels[512 * 512];
+	std::string fileContent = File::readBinary(filePath);
+	stbtt_BakeFontBitmap(reinterpret_cast<const unsigned char*>(fileContent.c_str()), 0, fontHeight, pixels, width, height, 32, 96, backedChars);
+
+	Image fontImage;
+	fontImage.width = 512;
+	fontImage.height = 512;
+	fontImage.format = ImageFormat::R8;
+	fontImage.colorSpace = ImageColorSpace::Linear;
+	fontImage.data.resize(512 * 512);
+	std::copy(pixels, pixels + (width * height), fontImage.data.begin());
+
+	m_fontImages.push_front(fontImage);
+
+	font.image = &m_fontImages.front();
+	font.imageSamplerFilter = ImageSamplerFilter::Linear;
+
+	for (unsigned char c = 32; c < 128; c++) {
+		float x = 0.0f;
+		float y = 0.0f;
+		stbtt_aligned_quad alignedQuad;
+		stbtt_GetBakedQuad(backedChars, width, height, static_cast<int>(c) - 32, &x, &y, &alignedQuad, 1);
+
+		FontGlyph glyph;
+		glyph.positionTopLeft = { alignedQuad.x0, alignedQuad.y0 };
+		glyph.positionBottomRight = { alignedQuad.x1, alignedQuad.y1 };
+		glyph.positionAdvance = backedChars[static_cast<int>(c) - 32].xadvance;
+		glyph.uvTopLeft = { alignedQuad.s0, alignedQuad.t0 };
+		glyph.uvBottomRight = { alignedQuad.s1, alignedQuad.t1 };
+
+		font.glyphs[c] = glyph;
+	}
 }
 
 void NtshEngn::AssetLoaderModule::loadModelGltf(const std::string& filePath, Model& model) {

@@ -2,8 +2,9 @@
 #include "../Common/module_interfaces/ntshengn_asset_loader_module_interface.h"
 #include "../Common/utils/ntshengn_utils_math.h"
 #include "../external/cgltf/cgltf.h"
-#include <unordered_map>
 #include <string>
+#include <forward_list>
+#include <unordered_map>
 
 namespace NtshEngn {
 
@@ -17,11 +18,13 @@ namespace NtshEngn {
 		Image loadImage(const std::string& filePath);
 		// Loads the model in file at path filePath
 		Model loadModel(const std::string& filePath);
+		// Loads the font in file at path filePath
+		Font loadFont(const std::string& filePath, float fontHeight);
 
 		// Calculate tangents for mesh
 		void calculateTangents(Mesh& mesh);
 		// Calculate and return the mesh's AABB
-		std::array<std::array<float, 3>, 2> calculateAABB(const Mesh& mesh);
+		std::array<Math::vec3, 2> calculateAABB(const Mesh& mesh);
 
 	private:
 		void loadSoundWav(const std::string& filePath, Sound& sound);
@@ -31,11 +34,14 @@ namespace NtshEngn {
 
 		void loadModelObj(const std::string& filePath, Model& model);
 
+		void loadFontTtf(const std::string& filePath, float fontHeight, Font& font);
+
 		void loadModelGltf(const std::string& filePath, Model& model);
 		void loadGltfNode(const std::string& filePath, Model& model, cgltf_node* node, Math::mat4 modelMatrix);
 
 	private:
 		std::unordered_map<std::string, Image> m_internalImages;
+		std::forward_list<Image> m_fontImages;
 
 		ImageSampler trilinearSampler = { ImageSamplerFilter::Linear,
 			ImageSamplerFilter::Linear,
