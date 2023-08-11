@@ -25,16 +25,24 @@ NtshEngn::Model NtshEngn::AssetLoaderModule::loadModel(const std::string& filePa
 	return Model();
 }
 
+NtshEngn::Font NtshEngn::AssetLoaderModule::loadFont(const std::string& filePath, float fontHeight) {
+	NTSHENGN_UNUSED(filePath);
+	NTSHENGN_UNUSED(fontHeight);
+	NTSHENGN_MODULE_FUNCTION_NOT_IMPLEMENTED();
+
+	return Font();
+}
+
 void NtshEngn::AssetLoaderModule::calculateTangents(Mesh& mesh) {
 	NTSHENGN_UNUSED(mesh);
 	NTSHENGN_MODULE_FUNCTION_NOT_IMPLEMENTED();
 }
 
-std::array<std::array<float, 3>, 2> NtshEngn::AssetLoaderModule::calculateAABB(const Mesh& mesh) {
+std::array<NtshEngn::Math::vec3, 2> NtshEngn::AssetLoaderModule::calculateAABB(const Mesh& mesh) {
 	NTSHENGN_UNUSED(mesh);
 	NTSHENGN_MODULE_FUNCTION_NOT_IMPLEMENTED();
 
-	return { std::array<float, 3>{ 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f } };
+	return { Math::vec3(0.0f, 0.0f, 0.0f), Math::vec3(0.0f, 0.0f, 0.0f) };
 }
 
 extern "C" NTSHENGN_MODULE_API NtshEngn::AssetLoaderModuleInterface* createModule() {
