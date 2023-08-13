@@ -765,16 +765,15 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 
 								const std::string uriBase64 = imageURI.substr(base64Pos + 8);
 								const size_t decodedDataSize = ((3 * uriBase64.size()) / 4) - std::count(uriBase64.begin(), uriBase64.end(), '=');
-								void* decodedData = new uint8_t[decodedDataSize];
-								cgltf_result result = cgltf_load_buffer_base64(&options, decodedDataSize, uriBase64.c_str(), &decodedData);
+								std::vector<uint8_t> decodedData(decodedDataSize);
+								cgltf_result result = cgltf_load_buffer_base64(&options, decodedDataSize, uriBase64.c_str(), reinterpret_cast<void**>(decodedData.data()));
 								if (result == cgltf_result_success) {
-									loadImageFromMemory(decodedData, decodedDataSize, image);
+									loadImageFromMemory(decodedData.data(), decodedDataSize, image);
 									image.colorSpace = ImageColorSpace::SRGB;
 								}
 								else {
 									NTSHENGN_MODULE_WARNING("Invalid Base64 data when loading glTF embedded texture for model file \"" + filePath + "\" (base color texture).");
 								}
-								delete[] decodedData;
 							}
 							else {
 								image = loadImage(File::directory(filePath) + imageURI);
@@ -837,16 +836,15 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 
 								const std::string uriBase64 = imageURI.substr(base64Pos + 8);
 								const size_t decodedDataSize = ((3 * uriBase64.size()) / 4) - std::count(uriBase64.begin(), uriBase64.end(), '=');
-								void* decodedData = new uint8_t[decodedDataSize];
-								cgltf_result result = cgltf_load_buffer_base64(&options, decodedDataSize, uriBase64.c_str(), &decodedData);
+								std::vector<uint8_t> decodedData(decodedDataSize);
+								cgltf_result result = cgltf_load_buffer_base64(&options, decodedDataSize, uriBase64.c_str(), reinterpret_cast<void**>(decodedData.data()));
 								if (result == cgltf_result_success) {
-									loadImageFromMemory(decodedData, decodedDataSize, image);
+									loadImageFromMemory(decodedData.data(), decodedDataSize, image);
 									image.colorSpace = ImageColorSpace::Linear;
 								}
 								else {
 									NTSHENGN_MODULE_WARNING("Invalid Base64 data when loading glTF embedded texture for model file \"" + filePath + "\" (metallic roughness texture).");
 								}
-								delete[] decodedData;
 							}
 							else {
 								image = loadImage(File::directory(filePath) + imageURI);
@@ -912,16 +910,15 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 
 							const std::string uriBase64 = imageURI.substr(base64Pos + 8);
 							const size_t decodedDataSize = ((3 * uriBase64.size()) / 4) - std::count(uriBase64.begin(), uriBase64.end(), '=');
-							void* decodedData = new uint8_t[decodedDataSize];
-							cgltf_result result = cgltf_load_buffer_base64(&options, decodedDataSize, uriBase64.c_str(), &decodedData);
+							std::vector<uint8_t> decodedData(decodedDataSize);
+							cgltf_result result = cgltf_load_buffer_base64(&options, decodedDataSize, uriBase64.c_str(), reinterpret_cast<void**>(decodedData.data()));
 							if (result == cgltf_result_success) {
-								loadImageFromMemory(decodedData, decodedDataSize, image);
+								loadImageFromMemory(decodedData.data(), decodedDataSize, image);
 								image.colorSpace = ImageColorSpace::Linear;
 							}
 							else {
 								NTSHENGN_MODULE_WARNING("Invalid Base64 data when loading glTF embedded texture for model file \"" + filePath + "\" (normal texture).");
 							}
-							delete[] decodedData;
 						}
 						else {
 							image = loadImage(File::directory(filePath) + imageURI);
@@ -963,16 +960,15 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 
 							const std::string uriBase64 = imageURI.substr(base64Pos + 8);
 							const size_t decodedDataSize = ((3 * uriBase64.size()) / 4) - std::count(uriBase64.begin(), uriBase64.end(), '=');
-							void* decodedData = new uint8_t[decodedDataSize];
-							cgltf_result result = cgltf_load_buffer_base64(&options, decodedDataSize, uriBase64.c_str(), &decodedData);
+							std::vector<uint8_t> decodedData(decodedDataSize);
+							cgltf_result result = cgltf_load_buffer_base64(&options, decodedDataSize, uriBase64.c_str(), reinterpret_cast<void**>(decodedData.data()));
 							if (result == cgltf_result_success) {
-								loadImageFromMemory(decodedData, decodedDataSize, image);
+								loadImageFromMemory(decodedData.data(), decodedDataSize, image);
 								image.colorSpace = ImageColorSpace::SRGB;
 							}
 							else {
 								NTSHENGN_MODULE_WARNING("Invalid Base64 data when loading glTF embedded texture for model file \"" + filePath + "\" (emissive texture).");
 							}
-							delete[] decodedData;
 						}
 						else {
 							image = loadImage(File::directory(filePath) + imageURI);
@@ -1036,16 +1032,15 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 
 							const std::string uriBase64 = imageURI.substr(base64Pos + 8);
 							const size_t decodedDataSize = ((3 * uriBase64.size()) / 4) - std::count(uriBase64.begin(), uriBase64.end(), '=');
-							void* decodedData = new uint8_t[decodedDataSize];
-							cgltf_result result = cgltf_load_buffer_base64(&options, decodedDataSize, uriBase64.c_str(), &decodedData);
+							std::vector<uint8_t> decodedData(decodedDataSize);
+							cgltf_result result = cgltf_load_buffer_base64(&options, decodedDataSize, uriBase64.c_str(), reinterpret_cast<void**>(decodedData.data()));
 							if (result == cgltf_result_success) {
-								loadImageFromMemory(decodedData, decodedDataSize, image);
+								loadImageFromMemory(decodedData.data(), decodedDataSize, image);
 								image.colorSpace = ImageColorSpace::Linear;
 							}
 							else {
 								NTSHENGN_MODULE_WARNING("Invalid Base64 data when loading glTF embedded texture for model file \"" + filePath + "\" (occlusion texture).");
 							}
-							delete[] decodedData;
 						}
 						else {
 							image = loadImage(File::directory(filePath) + imageURI);
