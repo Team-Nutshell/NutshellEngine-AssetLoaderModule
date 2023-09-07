@@ -38,13 +38,6 @@ void NtshEngn::AssetLoaderModule::calculateTangents(Mesh& mesh) {
 	NTSHENGN_MODULE_FUNCTION_NOT_IMPLEMENTED();
 }
 
-std::array<NtshEngn::Math::vec3, 2> NtshEngn::AssetLoaderModule::calculateAABB(const Mesh& mesh) {
-	NTSHENGN_UNUSED(mesh);
-	NTSHENGN_MODULE_FUNCTION_NOT_IMPLEMENTED();
-
-	return { Math::vec3(0.0f, 0.0f, 0.0f), Math::vec3(0.0f, 0.0f, 0.0f) };
-}
-
 extern "C" NTSHENGN_MODULE_API NtshEngn::AssetLoaderModuleInterface* createModule() {
 	return new NtshEngn::AssetLoaderModule;
 }
