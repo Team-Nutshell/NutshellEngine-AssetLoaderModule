@@ -119,52 +119,6 @@ void NtshEngn::AssetLoaderModule::calculateTangents(Mesh& mesh) {
 	}
 }
 
-std::array<NtshEngn::Math::vec3, 2> NtshEngn::AssetLoaderModule::calculateAABB(const Mesh& mesh) {
-	Math::vec3 min = Math::vec3(std::numeric_limits<float>::max());
-	Math::vec3 max = Math::vec3(std::numeric_limits<float>::lowest());
-	for (const NtshEngn::Vertex& vertex : mesh.vertices) {
-		if (vertex.position[0] < min.x) {
-			min.x = vertex.position[0];
-		}
-		if (vertex.position[0] > max.x) {
-			max.x = vertex.position[0];
-		}
-
-		if (vertex.position[1] < min.y) {
-			min.y = vertex.position[1];
-		}
-		if (vertex.position[1] > max.y) {
-			max.y = vertex.position[1];
-		}
-
-		if (vertex.position[2] < min.z) {
-			min.z = vertex.position[2];
-		}
-		if (vertex.position[2] > max.z) {
-			max.z = vertex.position[2];
-		}
-	}
-
-	const float epsilon = 0.0001f;
-
-	if (min.x == max.x) {
-		min.x -= epsilon;
-		max.x += epsilon;
-	}
-
-	if (min.y == max.y) {
-		min.y -= epsilon;
-		max.y += epsilon;
-	}
-
-	if (min.z == max.z) {
-		min.z -= epsilon;
-		max.z += epsilon;
-	}
-
-	return { Math::vec3(min.x, min.y, min.z), Math::vec3(max.x, max.y, max.z) };
-}
-
 void NtshEngn::AssetLoaderModule::loadSoundWav(const std::string& filePath, Sound& sound) {
 	char buffer[4];
 	int64_t tmp = 0;
@@ -636,32 +590,25 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 			for (size_t j = 0; j < vertexCount; j++) {
 				Vertex vertex;
 
-				Math::vec3 vertexPosition = modelMatrix * Math::vec4(Math::vec3(position + positionCursor), 1.0f);
-				vertex.position = { vertexPosition.x, vertexPosition.y, vertexPosition.z };
+				vertex.position = modelMatrix * Math::vec4(Math::vec3(position + positionCursor), 1.0f);
 				positionCursor += (positionStride / sizeof(float));
 
-				Math::vec3 vertexNormal = (normalCount != 0) ? Math::normalize(Math::vec3(Math::transpose(Math::inverse(modelMatrix)) * Math::vec4(Math::vec3(normal + normalCursor), 1.0f))) : Math::vec3(0.0f, 0.0f, 0.0f);
-				vertex.normal = { vertexNormal.x, vertexNormal.y, vertexNormal.z };
+				vertex.normal = (normalCount != 0) ? Math::normalize(Math::vec3(Math::transpose(Math::inverse(modelMatrix)) * Math::vec4(Math::vec3(normal + normalCursor), 1.0f))) : Math::vec3(0.0f, 0.0f, 0.0f);
 				normalCursor += (normalStride / sizeof(float));
 
-				Math::vec2 vertexUV = (uvCount != 0) ? Math::vec2(uv + uvCursor) : Math::vec2(0.5f, 0.5f);
-				vertex.uv = { vertexUV.x, vertexUV.y };
+				vertex.uv = (uvCount != 0) ? Math::vec2(uv + uvCursor) : Math::vec2(0.5f, 0.5f);
 				uvCursor += (uvStride / sizeof(float));
 
-				Math::vec3 vertexColor = (colorCount != 0) ? Math::vec3(color + colorCursor) : Math::vec3(0.0f, 0.0f, 0.0f);
-				vertex.color = { vertexColor.x, vertexColor.y, vertexColor.z };
+				vertex.color = (colorCount != 0) ? Math::vec3(color + colorCursor) : Math::vec3(0.0f, 0.0f, 0.0f);
 				colorCursor += (colorStride / sizeof(float));
 
-				Math::vec4 vertexTangent = (tangentCount != 0) ? Math::vec4(tangent + tangentCursor) : Math::vec4(0.5f, 0.5f, 0.5f, 1.0f);
-				vertex.tangent = { vertexTangent.x, vertexTangent.y, vertexTangent.z, vertexTangent.w };
+				vertex.tangent = (tangentCount != 0) ? Math::vec4(tangent + tangentCursor) : Math::vec4(0.5f, 0.5f, 0.5f, 1.0f);
 				tangentCursor += (tangentStride / sizeof(float));
 
-				Math::vec4 vertexJoints = (jointsCount != 0) ? Math::vec4(static_cast<float>(joints[jointsCursor]), static_cast<float>(joints[jointsCursor + 1]), static_cast<float>(joints[jointsCursor] + 2), static_cast<float>(joints[jointsCursor + 3])) : Math::vec4(0.0f, 0.0f, 0.0f, 0.0f);
-				vertex.joints = { vertexJoints.x, vertexJoints.y, vertexJoints.z, vertexJoints.w };
+				vertex.joints = (jointsCount != 0) ? std::array<uint32_t, 4>({ static_cast<uint32_t>(joints[jointsCursor]), static_cast<uint32_t>(joints[jointsCursor + 1]), static_cast<uint32_t>(joints[jointsCursor] + 2), static_cast<uint32_t>(joints[jointsCursor + 3]) }) : std::array<uint32_t, 4>({ 0, 0, 0, 0 });
 				jointsCursor += (jointsStride / sizeof(unsigned short));
 
-				Math::vec4 vertexWeights = (weightsCount != 0) ? Math::vec4(weights + weightsCursor) : Math::vec4(0.0f, 0.0f, 0.0f, 0.0f);
-				vertex.weights = { vertexWeights.x, vertexWeights.y, vertexWeights.z, vertexWeights.w };
+				vertex.weights = (weightsCount != 0) ? Math::vec4(weights + weightsCursor) : Math::vec4(0.0f, 0.0f, 0.0f, 0.0f);
 				weightsCursor += (weightsStride / sizeof(float));
 
 				primitive.mesh.vertices.push_back(vertex);
