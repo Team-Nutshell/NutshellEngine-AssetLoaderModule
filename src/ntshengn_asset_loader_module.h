@@ -23,8 +23,6 @@ namespace NtshEngn {
 
 		// Calculate tangents for mesh
 		void calculateTangents(Mesh& mesh);
-		// Calculate and return the mesh's AABB
-		std::array<Math::vec3, 2> calculateAABB(const Mesh& mesh);
 
 	private:
 		void loadSoundWav(const std::string& filePath, Sound& sound);
