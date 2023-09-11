@@ -1,6 +1,7 @@
 #pragma once
 #include "../Common/module_interfaces/ntshengn_asset_loader_module_interface.h"
 #include "../Common/utils/ntshengn_utils_math.h"
+#include "../Common/utils/ntshengn_utils_bimap.h"
 #include "../external/cgltf/cgltf.h"
 #include <string>
 #include <forward_list>
@@ -35,7 +36,9 @@ namespace NtshEngn {
 		void loadFontTtf(const std::string& filePath, float fontHeight, Font& font);
 
 		void loadModelGltf(const std::string& filePath, Model& model);
-		void loadGltfNode(const std::string& filePath, Model& model, cgltf_node* node, Math::mat4 modelMatrix);
+		void loadGltfNode(const std::string& filePath, Model& model, cgltf_node* node, Math::mat4 modelMatrix, Bimap<uint32_t, cgltf_node*>& jointNodes);
+		void loadGltfJoint(uint32_t jointIndex, Mesh& mesh, Math::mat4 jointMatrix, Bimap<uint32_t, cgltf_node*>& jointNodes, const std::unordered_map<uint32_t, size_t>& meshJoints);
+		void loadGltfAnimation(Model& model, cgltf_animation* node, Bimap<uint32_t, cgltf_node*>& jointNodes);
 
 	private:
 		std::unordered_map<std::string, Image> m_internalImages;

@@ -14,6 +14,7 @@
 #include <cmath>
 #include <iterator>
 #include <algorithm>
+#include <numeric>
 
 NtshEngn::Sound NtshEngn::AssetLoaderModule::loadSound(const std::string& filePath) {
 	Sound newSound;
@@ -472,10 +473,14 @@ void NtshEngn::AssetLoaderModule::loadModelGltf(const std::string& filePath, Mod
 		else {
 			cgltf_scene* scene = data->scene;
 
-			Math::mat4 modelMatrix = Math::mat4();
+			Bimap<uint32_t, cgltf_node*> jointNodes;
 
 			for (size_t i = 0; i < scene->nodes_count; i++) {
-				loadGltfNode(filePath, model, scene->nodes[i], modelMatrix);
+				loadGltfNode(filePath, model, scene->nodes[i], Math::mat4(), jointNodes);
+			}
+
+			for (size_t i = 0; i < data->animations_count; i++) {
+				loadGltfAnimation(model, &data->animations[i], jointNodes);
 			}
 		}
 
@@ -486,7 +491,7 @@ void NtshEngn::AssetLoaderModule::loadModelGltf(const std::string& filePath, Mod
 	}
 }
 
-void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Model& model, cgltf_node* node, Math::mat4 modelMatrix) {
+void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Model& model, cgltf_node* node, Math::mat4 modelMatrix, Bimap<uint32_t, cgltf_node*>& jointNodes) {
 	if (node->has_matrix) {
 		modelMatrix *= Math::mat4(node->matrix);
 	}
@@ -502,7 +507,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 		}
 	}
 
-	if (node->mesh != NULL) {
+	if (node->mesh) {
 		cgltf_mesh* nodeMesh = node->mesh;
 		for (size_t i = 0; i < nodeMesh->primitives_count; i++) {
 			cgltf_primitive nodeMeshPrimitive = nodeMesh->primitives[i];
@@ -515,7 +520,8 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 			float* uv = nullptr;
 			float* color = nullptr;
 			float* tangent = nullptr;
-			unsigned short* joints = nullptr;
+			uint8_t* jointsu8 = nullptr;
+			uint16_t* jointsu16 = nullptr;
 			float* weights = nullptr;
 
 			size_t positionCount = 0;
@@ -568,9 +574,16 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 					tangentStride = std::max(bufferView->stride, 4 * sizeof(float));
 				}
 				else if (attributeName == "JOINTS_0") {
-					joints = reinterpret_cast<unsigned short*>(bufferOffset);
-					jointsCount = attribute.data->count;
-					jointsStride = std::max(bufferView->stride, 4 * sizeof(unsigned short));
+					if (accessor->component_type == cgltf_component_type_r_8u) {
+						jointsu8 = reinterpret_cast<uint8_t*>(bufferOffset);
+						jointsCount = attribute.data->count;
+						jointsStride = std::max(bufferView->stride, 4 * sizeof(uint8_t));
+					}
+					else {
+						jointsu16 = reinterpret_cast<uint16_t*>(bufferOffset);
+						jointsCount = attribute.data->count;
+						jointsStride = std::max(bufferView->stride, 4 * sizeof(uint16_t));
+					}
 				}
 				else if (attributeName == "WEIGHTS_0") {
 					weights = reinterpret_cast<float*>(bufferOffset);
@@ -605,8 +618,14 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 				vertex.tangent = (tangentCount != 0) ? Math::vec4(tangent + tangentCursor) : Math::vec4(0.5f, 0.5f, 0.5f, 1.0f);
 				tangentCursor += (tangentStride / sizeof(float));
 
-				vertex.joints = (jointsCount != 0) ? std::array<uint32_t, 4>({ static_cast<uint32_t>(joints[jointsCursor]), static_cast<uint32_t>(joints[jointsCursor + 1]), static_cast<uint32_t>(joints[jointsCursor] + 2), static_cast<uint32_t>(joints[jointsCursor + 3]) }) : std::array<uint32_t, 4>({ 0, 0, 0, 0 });
-				jointsCursor += (jointsStride / sizeof(unsigned short));
+				if (jointsu8) {
+					vertex.joints = (jointsCount != 0) ? std::array<uint32_t, 4>({ static_cast<uint32_t>(jointsu8[jointsCursor]), static_cast<uint32_t>(jointsu8[jointsCursor + 1]), static_cast<uint32_t>(jointsu8[jointsCursor] + 2), static_cast<uint32_t>(jointsu8[jointsCursor + 3]) }) : std::array<uint32_t, 4>({ 0, 0, 0, 0 });
+					jointsCursor += (jointsStride / sizeof(uint8_t));
+				}
+				else {
+					vertex.joints = (jointsCount != 0) ? std::array<uint32_t, 4>({ static_cast<uint32_t>(jointsu16[jointsCursor]), static_cast<uint32_t>(jointsu16[jointsCursor + 1]), static_cast<uint32_t>(jointsu16[jointsCursor] + 2), static_cast<uint32_t>(jointsu16[jointsCursor + 3]) }) : std::array<uint32_t, 4>({ 0, 0, 0, 0 });
+					jointsCursor += (jointsStride / sizeof(uint16_t));
+				}
 
 				vertex.weights = (weightsCount != 0) ? Math::vec4(weights + weightsCursor) : Math::vec4(0.0f, 0.0f, 0.0f, 0.0f);
 				weightsCursor += (weightsStride / sizeof(float));
@@ -678,6 +697,11 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 					NTSHENGN_MODULE_WARNING("Index component type invalid for model file \"" + filePath + "\".");
 				}
 			}
+			else {
+				// Calculate indices
+				primitive.mesh.indices.resize(primitive.mesh.vertices.size());
+				std::iota(primitive.mesh.indices.begin(), primitive.mesh.indices.end(), 0);
+			}
 
 			// Tangents
 			if ((tangentCount == 0) && (uvCount != 0) && (normalCount != 0) && (primitive.mesh.indices.size() != 0)) {
@@ -685,7 +709,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 
 				// Invert tangent handedness
 				for (Vertex& vertex : primitive.mesh.vertices) {
-					vertex.tangent[3] *= -1.0f;
+					vertex.tangent.w *= -1.0f;
 				}
 			}
 
@@ -1027,9 +1051,169 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 		}
 	}
 
-	for (size_t i = 0; i < node->children_count; i++) {
-		loadGltfNode(filePath, model, node->children[i], modelMatrix);
+	if (node->skin) {
+		cgltf_skin* nodeSkin = node->skin;
+
+		cgltf_accessor* accessor = nodeSkin->inverse_bind_matrices;
+		cgltf_buffer_view* bufferView = accessor->buffer_view;
+		std::byte* buffer = static_cast<std::byte*>(bufferView->buffer->data);
+		
+		uint32_t firstNode = 0;
+		std::unordered_map<uint32_t, size_t> meshJoints;
+		for (size_t i = 0; i < nodeSkin->joints_count; i++) {
+			cgltf_node* nodeJoint = nodeSkin->joints[i];
+			if (!jointNodes.exist(nodeJoint)) {
+				jointNodes.insert_or_assign(static_cast<uint32_t>(jointNodes.size()), nodeJoint);
+			}
+			std::byte* bufferOffset = buffer + accessor->offset + bufferView->offset + (16 * sizeof(float) * i);
+
+			Joint joint;
+			joint.inverseBindMatrix = Math::mat4(reinterpret_cast<float*>(bufferOffset));
+			model.primitives.back().mesh.joints.push_back(joint);
+
+			meshJoints[jointNodes[nodeJoint]] = model.primitives.back().mesh.joints.size() - 1;
+
+			if (i == 0) {
+				firstNode = jointNodes[nodeJoint];
+			}
+		}
+		if (nodeSkin->skeleton) {
+			firstNode = jointNodes[nodeSkin->skeleton];
+		}
+
+		loadGltfJoint(firstNode, model.primitives.back().mesh, Math::mat4(), jointNodes, meshJoints);
 	}
+
+	for (size_t i = 0; i < node->children_count; i++) {
+		loadGltfNode(filePath, model, node->children[i], modelMatrix, jointNodes);
+	}
+}
+
+void NtshEngn::AssetLoaderModule::loadGltfJoint(uint32_t jointIndex, Mesh& mesh, Math::mat4 jointMatrix, Bimap<uint32_t, cgltf_node*>& jointNodes, const std::unordered_map<uint32_t, size_t>& meshJoints) {
+	cgltf_node* node = jointNodes[jointIndex];
+	if (node->has_matrix) {
+		jointMatrix *= Math::mat4(node->matrix);
+	}
+	else {
+		if (node->has_translation) {
+			jointMatrix *= Math::translate(Math::vec3(node->translation));
+		}
+		if (node->has_rotation) {
+			jointMatrix *= Math::to_mat4(Math::quat(node->rotation[3], node->rotation[0], node->rotation[1], node->rotation[2]));
+		}
+		if (node->has_scale) {
+			jointMatrix *= Math::scale(Math::vec3(node->scale));
+		}
+	}
+
+	Joint& joint = mesh.joints[meshJoints.at(jointIndex)];
+	joint.baseTransform = jointMatrix;
+
+	for (size_t i = 0; i < node->children_count; i++) {
+		joint.children.push_back(jointNodes[node->children[i]]);
+		loadGltfJoint(joint.children.back(), mesh, jointMatrix, jointNodes, meshJoints);
+	}
+}
+
+void NtshEngn::AssetLoaderModule::loadGltfAnimation(Model& model, cgltf_animation* node, Bimap<uint32_t, cgltf_node*>& jointNodes) {
+	Animation animation;
+
+	for (size_t i = 0; i < node->channels_count; i++) {
+		AnimationChannel channel;
+
+		cgltf_animation_channel animationChannel = node->channels[i];
+
+		cgltf_node* animationTargetNode = animationChannel.target_node;
+
+		uint32_t jointIndex = 0;
+		if (jointNodes.exist(animationTargetNode)) {
+			jointIndex = jointNodes[animationTargetNode];
+		}
+		else {
+			continue;
+		}
+
+		cgltf_animation_sampler* animationSampler = animationChannel.sampler;
+		switch (animationSampler->interpolation) {
+		case cgltf_interpolation_type_linear:
+			channel.interpolationType = AnimationChannelInterpolationType::Linear;
+			break;
+
+		case cgltf_interpolation_type_step:
+			channel.interpolationType = AnimationChannelInterpolationType::Step;
+			break;
+
+		case cgltf_interpolation_type_cubic_spline:
+			channel.interpolationType = AnimationChannelInterpolationType::CubicSpline;
+			break;
+
+		default:
+			channel.interpolationType = AnimationChannelInterpolationType::Unknown;
+		}
+
+		switch (animationChannel.target_path) {
+		case cgltf_animation_path_type_translation:
+			channel.transformType = AnimationChannelTransformType::Translation;
+			break;
+
+		case cgltf_animation_path_type_rotation:
+			channel.transformType = AnimationChannelTransformType::Rotation;
+			break;
+
+		case cgltf_animation_path_type_scale:
+			channel.transformType = AnimationChannelTransformType::Scale;
+			break;
+
+		default:
+			channel.transformType = AnimationChannelTransformType::Unknown;
+		}
+		
+		cgltf_accessor* animationSamplerInputAccessor = animationSampler->input;
+		cgltf_buffer_view* animationSamplerInputBufferView = animationSamplerInputAccessor->buffer_view;
+		std::byte* animationSamplerInputBuffer = static_cast<std::byte*>(animationSamplerInputBufferView->buffer->data);
+		std::byte* animationSamplerInputBufferOffset = animationSamplerInputBuffer + animationSamplerInputAccessor->offset + animationSamplerInputBufferView->offset;
+
+		cgltf_accessor* animationSamplerOutputAccessor = animationSampler->output;
+		cgltf_buffer_view* animationSamplerOutputBufferView = animationSamplerOutputAccessor->buffer_view;
+		std::byte* animationSamplerOutputBuffer = static_cast<std::byte*>(animationSamplerOutputBufferView->buffer->data);
+		std::byte* animationSamplerOutputBufferOffset = animationSamplerOutputBuffer + animationSamplerOutputAccessor->offset + animationSamplerOutputBufferView->offset;
+
+		std::vector<AnimationKeyframe> keyframes;
+		for (size_t j = 0; j < animationSamplerInputAccessor->count; j++) {
+			AnimationKeyframe keyframe;
+			keyframe.timestamp = *(reinterpret_cast<float*>(animationSamplerInputBufferOffset) + j);
+			
+			switch (channel.transformType) {
+			case AnimationChannelTransformType::Translation:
+			case AnimationChannelTransformType::Scale:
+				keyframe.value = Math::vec4(Math::vec3(reinterpret_cast<float*>(animationSamplerOutputBufferOffset)), 0.0f);
+				animationSamplerOutputBufferOffset += sizeof(float) * 3;
+				break;
+
+			case AnimationChannelTransformType::Rotation:
+				keyframe.value = { *(reinterpret_cast<float*>(animationSamplerOutputBufferOffset) + 3), *(reinterpret_cast<float*>(animationSamplerOutputBufferOffset) + 0), *(reinterpret_cast<float*>(animationSamplerOutputBufferOffset) + 1), *(reinterpret_cast<float*>(animationSamplerOutputBufferOffset) + 2) };
+				animationSamplerOutputBufferOffset += sizeof(float) * 4;
+				break;
+			}
+
+			channel.keyframes.push_back(keyframe);
+		}
+
+		if (animationChannel.sampler->input->has_max) {
+			if (animationChannel.sampler->input->max[0] > animation.duration) {
+				animation.duration = animationChannel.sampler->input->max[0];
+			}
+		}
+		else {
+			if (channel.keyframes.back().timestamp) {
+				animation.duration = channel.keyframes.back().timestamp;
+			}
+		}
+
+		animation.jointChannels[jointIndex].push_back(channel);
+	}
+
+	model.animations.push_back(animation);
 }
 
 extern "C" NTSHENGN_MODULE_API NtshEngn::AssetLoaderModuleInterface* createModule() {
