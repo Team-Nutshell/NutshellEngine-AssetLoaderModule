@@ -1088,21 +1088,24 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 				jointMatrix = Math::mat4(jointParentNode->matrix) * jointMatrix;
 			}
 			else {
+				Math::mat4 parentMatrix;
 				if (jointParentNode->has_translation) {
-					jointMatrix = Math::translate(Math::vec3(jointParentNode->translation)) * jointMatrix;
+					parentMatrix *= Math::translate(Math::vec3(jointParentNode->translation));
 				}
 				if (jointParentNode->has_rotation) {
-					jointMatrix = Math::to_mat4(Math::quat(jointParentNode->rotation[3], jointParentNode->rotation[0], jointParentNode->rotation[1], jointParentNode->rotation[2])) * jointMatrix;
+					parentMatrix *= Math::to_mat4(Math::quat(jointParentNode->rotation[3], jointParentNode->rotation[0], jointParentNode->rotation[1], jointParentNode->rotation[2]));
 				}
 				if (jointParentNode->has_scale) {
-					jointMatrix = Math::scale(Math::vec3(jointParentNode->scale)) * jointMatrix;
+					parentMatrix *= Math::scale(Math::vec3(jointParentNode->scale));
 				}
+
+				jointMatrix = parentMatrix * jointMatrix;
 			}
 
 			jointParentNode = jointParentNode->parent;
 		}
 
-		loadGltfJoint(firstNode, model.primitives.back().mesh, modelMatrix * jointMatrix, jointNodes, meshJoints);
+		loadGltfJoint(firstNode, model.primitives.back().mesh, jointMatrix, jointNodes, meshJoints);
 	}
 
 	for (size_t i = 0; i < node->children_count; i++) {
