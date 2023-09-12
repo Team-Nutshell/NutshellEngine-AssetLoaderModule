@@ -612,7 +612,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 			for (size_t j = 0; j < vertexCount; j++) {
 				Vertex vertex;
 
-				vertex.position = modelMatrix * Math::vec4(Math::vec3(position + positionCursor), 1.0f);
+				vertex.position = Math::vec3(position + positionCursor);
 				positionCursor += (positionStride / sizeof(float));
 
 				vertex.normal = (normalCount != 0) ? Math::normalize(Math::vec3(Math::transpose(Math::inverse(modelMatrix)) * Math::vec4(Math::vec3(normal + normalCursor), 1.0f))) : Math::vec3(0.0f, 0.0f, 0.0f);
@@ -1063,12 +1063,14 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 	if (node->skin) {
 		cgltf_skin* nodeSkin = node->skin;
 
+		Skin skin;
+		skin.inverseGlobalTransform = Math::inverse(modelMatrix);
+
 		cgltf_accessor* accessor = nodeSkin->inverse_bind_matrices;
 		cgltf_buffer_view* bufferView = accessor->buffer_view;
 		std::byte* buffer = static_cast<std::byte*>(bufferView->buffer->data);
 		
-		uint32_t firstNode = 0;
-		std::unordered_map<uint32_t, size_t> meshJoints;
+		std::unordered_map<uint32_t, size_t> skinJoints;
 		for (size_t i = 0; i < nodeSkin->joints_count; i++) {
 			cgltf_node* nodeJoint = nodeSkin->joints[i];
 			if (!jointNodes.exist(nodeJoint)) {
@@ -1078,59 +1080,68 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 
 			Joint joint;
 			joint.inverseBindMatrix = Math::mat4(reinterpret_cast<float*>(bufferOffset));
-			model.primitives.back().mesh.joints.push_back(joint);
 
-			meshJoints[jointNodes[nodeJoint]] = model.primitives.back().mesh.joints.size() - 1;
+			if (nodeJoint->has_matrix) {
+				joint.localTransform = Math::mat4(nodeJoint->matrix);
+			}
+			else {
+				if (nodeJoint->has_translation) {
+					joint.localTransform *= Math::translate(Math::vec3(nodeJoint->translation));
+				}
+				if (nodeJoint->has_rotation) {
+					joint.localTransform *= Math::to_mat4(Math::quat(nodeJoint->rotation[3], nodeJoint->rotation[0], nodeJoint->rotation[1], nodeJoint->rotation[2]));
+				}
+				if (nodeJoint->has_scale) {
+					joint.localTransform *= Math::scale(Math::vec3(nodeJoint->scale));
+				}
+			}
+
+			skin.joints.push_back(joint);
+
+			skinJoints[jointNodes[nodeJoint]] = skin.joints.size() - 1;
 
 			if (i == 0) {
-				firstNode = jointNodes[nodeJoint];
+				skin.rootJoint = jointNodes[nodeJoint];
 			}
 		}
 		if (nodeSkin->skeleton) {
-			firstNode = jointNodes[nodeSkin->skeleton];
+			skin.rootJoint = jointNodes[nodeSkin->skeleton];
 		}
 
-		loadGltfJoint(firstNode, model.primitives.back().mesh, jointNodes, meshJoints);
+		for (size_t i = 0; i < nodeSkin->joints_count; i++) {
+			for (size_t j = 0; j < jointNodes[static_cast<uint32_t>(i)]->children_count; j++) {
+				skin.joints[i].children.push_back(jointNodes[jointNodes[static_cast<uint32_t>(i)]->children[j]]);
+			}
+		}
+
+		cgltf_node* baseMatrixNode = jointNodes[skin.rootJoint]->parent;
+		while (baseMatrixNode) {
+			Math::mat4 nodeMatrix;
+			if (baseMatrixNode->has_matrix) {
+				nodeMatrix = Math::mat4(baseMatrixNode->matrix);
+			}
+			else {
+				if (baseMatrixNode->has_translation) {
+					nodeMatrix *= Math::translate(Math::vec3(baseMatrixNode->translation));
+				}
+				if (baseMatrixNode->has_rotation) {
+					nodeMatrix *= Math::to_mat4(Math::quat(baseMatrixNode->rotation[3], baseMatrixNode->rotation[0], baseMatrixNode->rotation[1], baseMatrixNode->rotation[2]));
+				}
+				if (baseMatrixNode->has_scale) {
+					nodeMatrix *= Math::scale(Math::vec3(baseMatrixNode->scale));
+				}
+			}
+
+			skin.baseMatrix = nodeMatrix * skin.baseMatrix;
+
+			baseMatrixNode = baseMatrixNode->parent;
+		}
+
+		model.primitives.back().mesh.skin = skin;
 	}
 
 	for (size_t i = 0; i < node->children_count; i++) {
 		loadGltfNode(filePath, model, node->children[i], jointNodes);
-	}
-}
-
-void NtshEngn::AssetLoaderModule::loadGltfJoint(uint32_t jointIndex, Mesh& mesh, Bimap<uint32_t, cgltf_node*>& jointNodes, const std::unordered_map<uint32_t, size_t>& meshJoints) {
-	cgltf_node* node = jointNodes[jointIndex];
-	
-	Math::mat4 jointMatrix;
-	cgltf_node* matrixNode = node;
-	while (matrixNode) {
-		Math::mat4 nodeMatrix;
-		if (matrixNode->has_matrix) {
-			nodeMatrix = Math::mat4(matrixNode->matrix);
-		}
-		else {
-			if (matrixNode->has_translation) {
-				nodeMatrix *= Math::translate(Math::vec3(matrixNode->translation));
-			}
-			if (matrixNode->has_rotation) {
-				nodeMatrix *= Math::to_mat4(Math::quat(matrixNode->rotation[3], matrixNode->rotation[0], matrixNode->rotation[1], matrixNode->rotation[2]));
-			}
-			if (matrixNode->has_scale) {
-				nodeMatrix *= Math::scale(Math::vec3(matrixNode->scale));
-			}
-		}
-
-		jointMatrix = nodeMatrix * jointMatrix;
-
-		matrixNode = matrixNode->parent;
-	}
-
-	Joint& joint = mesh.joints[meshJoints.at(jointIndex)];
-	joint.baseTransform = jointMatrix;
-
-	for (size_t i = 0; i < node->children_count; i++) {
-		joint.children.push_back(jointNodes[node->children[i]]);
-		loadGltfJoint(joint.children.back(), mesh, jointNodes, meshJoints);
 	}
 }
 
