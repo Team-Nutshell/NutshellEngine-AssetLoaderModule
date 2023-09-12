@@ -36,8 +36,8 @@ namespace NtshEngn {
 		void loadFontTtf(const std::string& filePath, float fontHeight, Font& font);
 
 		void loadModelGltf(const std::string& filePath, Model& model);
-		void loadGltfNode(const std::string& filePath, Model& model, cgltf_node* node, Math::mat4 modelMatrix, Bimap<uint32_t, cgltf_node*>& jointNodes);
-		void loadGltfJoint(uint32_t jointIndex, Mesh& mesh, Math::mat4 jointMatrix, Bimap<uint32_t, cgltf_node*>& jointNodes, const std::unordered_map<uint32_t, size_t>& meshJoints);
+		void loadGltfNode(const std::string& filePath, Model& model, cgltf_node* node, Bimap<uint32_t, cgltf_node*>& jointNodes);
+		void loadGltfJoint(uint32_t jointIndex, Mesh& mesh, Bimap<uint32_t, cgltf_node*>& jointNodes, const std::unordered_map<uint32_t, size_t>& meshJoints);
 		void loadGltfAnimation(Model& model, cgltf_animation* node, Bimap<uint32_t, cgltf_node*>& jointNodes);
 
 	private:
