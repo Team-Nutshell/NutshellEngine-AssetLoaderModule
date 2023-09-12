@@ -1082,6 +1082,28 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 		}
 
 		loadGltfJoint(firstNode, model.primitives.back().mesh, Math::mat4(), jointNodes, meshJoints);
+		Math::mat4 jointMatrix;
+		cgltf_node* jointParentNode = jointNodes[firstNode]->parent;
+		while (jointParentNode) {
+			if (jointParentNode->has_matrix) {
+				jointMatrix = Math::mat4(jointParentNode->matrix) * jointMatrix;
+			}
+			else {
+				if (jointParentNode->has_translation) {
+					jointMatrix = Math::translate(Math::vec3(jointParentNode->translation)) * jointMatrix;
+				}
+				if (jointParentNode->has_rotation) {
+					jointMatrix = Math::to_mat4(Math::quat(jointParentNode->rotation[3], jointParentNode->rotation[0], jointParentNode->rotation[1], jointParentNode->rotation[2])) * jointMatrix;
+				}
+				if (jointParentNode->has_scale) {
+					jointMatrix = Math::scale(Math::vec3(jointParentNode->scale)) * jointMatrix;
+				}
+			}
+
+			jointParentNode = jointParentNode->parent;
+		}
+
+		loadGltfJoint(firstNode, model.primitives.back().mesh, modelMatrix * jointMatrix, jointNodes, meshJoints);
 	}
 
 	for (size_t i = 0; i < node->children_count; i++) {
