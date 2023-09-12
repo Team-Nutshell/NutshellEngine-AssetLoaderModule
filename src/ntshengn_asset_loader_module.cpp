@@ -476,7 +476,7 @@ void NtshEngn::AssetLoaderModule::loadModelGltf(const std::string& filePath, Mod
 			Bimap<uint32_t, cgltf_node*> jointNodes;
 
 			for (size_t i = 0; i < scene->nodes_count; i++) {
-				loadGltfNode(filePath, model, scene->nodes[i], Math::mat4(), jointNodes);
+				loadGltfNode(filePath, model, scene->nodes[i], jointNodes);
 			}
 
 			for (size_t i = 0; i < data->animations_count; i++) {
@@ -491,20 +491,29 @@ void NtshEngn::AssetLoaderModule::loadModelGltf(const std::string& filePath, Mod
 	}
 }
 
-void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Model& model, cgltf_node* node, Math::mat4 modelMatrix, Bimap<uint32_t, cgltf_node*>& jointNodes) {
-	if (node->has_matrix) {
-		modelMatrix *= Math::mat4(node->matrix);
-	}
-	else {
-		if (node->has_translation) {
-			modelMatrix *= Math::translate(Math::vec3(node->translation));
+void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Model& model, cgltf_node* node, Bimap<uint32_t, cgltf_node*>& jointNodes) {
+	Math::mat4 modelMatrix;
+	cgltf_node* matrixNode = node;
+	while (matrixNode) {
+		Math::mat4 nodeMatrix;
+		if (matrixNode->has_matrix) {
+			nodeMatrix = Math::mat4(matrixNode->matrix);
 		}
-		if (node->has_rotation) {
-			modelMatrix *= Math::to_mat4(Math::quat(node->rotation[3], node->rotation[0], node->rotation[1], node->rotation[2]));
+		else {
+			if (matrixNode->has_translation) {
+				nodeMatrix *= Math::translate(Math::vec3(matrixNode->translation));
+			}
+			if (matrixNode->has_rotation) {
+				nodeMatrix *= Math::to_mat4(Math::quat(matrixNode->rotation[3], matrixNode->rotation[0], matrixNode->rotation[1], matrixNode->rotation[2]));
+			}
+			if (matrixNode->has_scale) {
+				nodeMatrix *= Math::scale(Math::vec3(matrixNode->scale));
+			}
 		}
-		if (node->has_scale) {
-			modelMatrix *= Math::scale(Math::vec3(node->scale));
-		}
+
+		modelMatrix = nodeMatrix * modelMatrix;
+
+		matrixNode = matrixNode->parent;
 	}
 
 	if (node->mesh) {
@@ -1081,53 +1090,39 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 			firstNode = jointNodes[nodeSkin->skeleton];
 		}
 
-		Math::mat4 jointMatrix;
-		cgltf_node* jointParentNode = jointNodes[firstNode]->parent;
-		while (jointParentNode) {
-			if (jointParentNode->has_matrix) {
-				jointMatrix = Math::mat4(jointParentNode->matrix) * jointMatrix;
-			}
-			else {
-				Math::mat4 parentMatrix;
-				if (jointParentNode->has_translation) {
-					parentMatrix *= Math::translate(Math::vec3(jointParentNode->translation));
-				}
-				if (jointParentNode->has_rotation) {
-					parentMatrix *= Math::to_mat4(Math::quat(jointParentNode->rotation[3], jointParentNode->rotation[0], jointParentNode->rotation[1], jointParentNode->rotation[2]));
-				}
-				if (jointParentNode->has_scale) {
-					parentMatrix *= Math::scale(Math::vec3(jointParentNode->scale));
-				}
-
-				jointMatrix = parentMatrix * jointMatrix;
-			}
-
-			jointParentNode = jointParentNode->parent;
-		}
-
-		loadGltfJoint(firstNode, model.primitives.back().mesh, jointMatrix, jointNodes, meshJoints);
+		loadGltfJoint(firstNode, model.primitives.back().mesh, jointNodes, meshJoints);
 	}
 
 	for (size_t i = 0; i < node->children_count; i++) {
-		loadGltfNode(filePath, model, node->children[i], modelMatrix, jointNodes);
+		loadGltfNode(filePath, model, node->children[i], jointNodes);
 	}
 }
 
-void NtshEngn::AssetLoaderModule::loadGltfJoint(uint32_t jointIndex, Mesh& mesh, Math::mat4 jointMatrix, Bimap<uint32_t, cgltf_node*>& jointNodes, const std::unordered_map<uint32_t, size_t>& meshJoints) {
+void NtshEngn::AssetLoaderModule::loadGltfJoint(uint32_t jointIndex, Mesh& mesh, Bimap<uint32_t, cgltf_node*>& jointNodes, const std::unordered_map<uint32_t, size_t>& meshJoints) {
 	cgltf_node* node = jointNodes[jointIndex];
-	if (node->has_matrix) {
-		jointMatrix *= Math::mat4(node->matrix);
-	}
-	else {
-		if (node->has_translation) {
-			jointMatrix *= Math::translate(Math::vec3(node->translation));
+	
+	Math::mat4 jointMatrix;
+	cgltf_node* matrixNode = node;
+	while (matrixNode) {
+		Math::mat4 nodeMatrix;
+		if (matrixNode->has_matrix) {
+			nodeMatrix = Math::mat4(matrixNode->matrix);
 		}
-		if (node->has_rotation) {
-			jointMatrix *= Math::to_mat4(Math::quat(node->rotation[3], node->rotation[0], node->rotation[1], node->rotation[2]));
+		else {
+			if (matrixNode->has_translation) {
+				nodeMatrix *= Math::translate(Math::vec3(matrixNode->translation));
+			}
+			if (matrixNode->has_rotation) {
+				nodeMatrix *= Math::to_mat4(Math::quat(matrixNode->rotation[3], matrixNode->rotation[0], matrixNode->rotation[1], matrixNode->rotation[2]));
+			}
+			if (matrixNode->has_scale) {
+				nodeMatrix *= Math::scale(Math::vec3(matrixNode->scale));
+			}
 		}
-		if (node->has_scale) {
-			jointMatrix *= Math::scale(Math::vec3(node->scale));
-		}
+
+		jointMatrix = nodeMatrix * jointMatrix;
+
+		matrixNode = matrixNode->parent;
 	}
 
 	Joint& joint = mesh.joints[meshJoints.at(jointIndex)];
@@ -1135,7 +1130,7 @@ void NtshEngn::AssetLoaderModule::loadGltfJoint(uint32_t jointIndex, Mesh& mesh,
 
 	for (size_t i = 0; i < node->children_count; i++) {
 		joint.children.push_back(jointNodes[node->children[i]]);
-		loadGltfJoint(joint.children.back(), mesh, jointMatrix, jointNodes, meshJoints);
+		loadGltfJoint(joint.children.back(), mesh, jointNodes, meshJoints);
 	}
 }
 
