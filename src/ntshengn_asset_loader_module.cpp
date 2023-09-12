@@ -1081,7 +1081,6 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 			firstNode = jointNodes[nodeSkin->skeleton];
 		}
 
-		loadGltfJoint(firstNode, model.primitives.back().mesh, Math::mat4(), jointNodes, meshJoints);
 		Math::mat4 jointMatrix;
 		cgltf_node* jointParentNode = jointNodes[firstNode]->parent;
 		while (jointParentNode) {
