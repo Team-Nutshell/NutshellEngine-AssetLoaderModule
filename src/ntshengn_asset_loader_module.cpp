@@ -612,11 +612,20 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 			for (size_t j = 0; j < vertexCount; j++) {
 				Vertex vertex;
 
-				vertex.position = Math::vec3(position + positionCursor);
-				positionCursor += (positionStride / sizeof(float));
+				if (!node->skin) {
+					vertex.position = modelMatrix * Math::vec4(Math::vec3(position + positionCursor), 1.0f);
+					positionCursor += (positionStride / sizeof(float));
 
-				vertex.normal = (normalCount != 0) ? Math::normalize(Math::vec3(Math::transpose(Math::inverse(modelMatrix)) * Math::vec4(Math::vec3(normal + normalCursor), 1.0f))) : Math::vec3(0.0f, 0.0f, 0.0f);
-				normalCursor += (normalStride / sizeof(float));
+					vertex.normal = (normalCount != 0) ? Math::normalize(Math::vec3(Math::transpose(Math::inverse(modelMatrix)) * Math::vec4(Math::vec3(normal + normalCursor), 0.0f))) : Math::vec3(0.0f, 0.0f, 0.0f);
+					normalCursor += (normalStride / sizeof(float));
+				}
+				else {
+					vertex.position = Math::vec3(position + positionCursor);
+					positionCursor += (positionStride / sizeof(float));
+
+					vertex.normal = (normalCount != 0) ? Math::normalize(Math::vec3(normal + normalCursor)) : Math::vec3(0.0f, 0.0f, 0.0f);
+					normalCursor += (normalStride / sizeof(float));
+				}
 
 				vertex.uv = (uvCount != 0) ? Math::vec2(uv + uvCursor) : Math::vec2(0.5f, 0.5f);
 				uvCursor += (uvStride / sizeof(float));
@@ -1137,7 +1146,9 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 			baseMatrixNode = baseMatrixNode->parent;
 		}
 
-		model.primitives.back().mesh.skin = skin;
+		for (size_t i = 0; i < model.primitives.size(); i++) {
+			model.primitives[i].mesh.skin = skin;
+		}
 	}
 
 	for (size_t i = 0; i < node->children_count; i++) {
