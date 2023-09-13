@@ -1219,9 +1219,9 @@ void NtshEngn::AssetLoaderModule::loadGltfAnimation(Model& model, cgltf_animatio
 		std::byte* animationSamplerOutputBuffer = static_cast<std::byte*>(animationSamplerOutputBufferView->buffer->data);
 		std::byte* animationSamplerOutputBufferOffset = animationSamplerOutputBuffer + animationSamplerOutputAccessor->offset + animationSamplerOutputBufferView->offset;
 
-		std::vector<AnimationKeyframe> keyframes;
+		std::vector<AnimationChannelKeyframe> keyframes;
 		for (size_t j = 0; j < animationSamplerInputAccessor->count; j++) {
-			AnimationKeyframe keyframe;
+			AnimationChannelKeyframe keyframe;
 			keyframe.timestamp = *(reinterpret_cast<float*>(animationSamplerInputBufferOffset) + j);
 			
 			switch (channel.transformType) {
