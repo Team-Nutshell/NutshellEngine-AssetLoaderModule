@@ -10,6 +10,14 @@
 #include "../external/stb/stb_image.h"
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "../external/stb/stb_truetype.h"
+#pragma warning(push)
+#pragma warning(disable : 4244)
+#pragma warning(disable : 4245)
+#pragma warning(disable : 4456)
+#pragma warning(disable : 4457)
+#pragma warning(disable : 4701)
+#include "../external/stb/stb_vorbis.c"
+#pragma warning(pop)
 #include <cstddef>
 #include <cmath>
 #include <iterator>
@@ -22,6 +30,9 @@ NtshEngn::Sound NtshEngn::AssetLoaderModule::loadSound(const std::string& filePa
 	std::string extension = File::extension(filePath);
 	if (extension == "wav") {
 		loadSoundWav(filePath, newSound);
+	}
+	else if (extension == "ogg") {
+		loadSoundOgg(filePath, newSound);
 	}
 	else {
 		NTSHENGN_MODULE_WARNING("Sound file extension \"." + extension + "\" not supported.");
@@ -236,7 +247,7 @@ void NtshEngn::AssetLoaderModule::loadSoundWav(const std::string& filePath, Soun
 		return;
 	}
 	if (file.fail()) {
-		NTSHENGN_MODULE_WARNING("Unknown error while loading WAVE sound file.");
+		NTSHENGN_MODULE_WARNING("Unknown error while loading \"" + filePath + "\" WAVE sound file.");
 		return;
 	}
 
@@ -247,6 +258,23 @@ void NtshEngn::AssetLoaderModule::loadSoundWav(const std::string& filePath, Soun
 	data.erase(data.begin(), data.end());
 
 	file.close();
+}
+
+void NtshEngn::AssetLoaderModule::loadSoundOgg(const std::string& filePath, Sound& sound) {
+	int channels;
+	int size;
+	short* data;
+	size = stb_vorbis_decode_filename(filePath.c_str(), &channels, &sound.sampleRate, &data);
+
+	if (sound.size == -1) {
+		NTSHENGN_MODULE_WARNING("Unknown error when loading \"" + filePath + "\" Ogg Vorbis sound file.");
+	}
+
+	sound.channels = static_cast<uint8_t>(channels);
+	sound.size = static_cast<size_t>(size) * sound.channels * (sizeof(int16_t) / sizeof(uint8_t));
+	sound.bitsPerSample = 16;
+	sound.data.resize(sound.size);
+	memcpy(sound.data.data(), reinterpret_cast<uint8_t*>(data), sound.size);
 }
 
 void NtshEngn::AssetLoaderModule::loadImageStb(const std::string& filePath, Image& image) {
