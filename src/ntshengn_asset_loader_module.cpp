@@ -1282,7 +1282,9 @@ void NtshEngn::AssetLoaderModule::loadGltfAnimation(Model& model, cgltf_animatio
 		animation.jointChannels[jointIndex].push_back(channel);
 	}
 
-	model.animations.push_back(animation);
+	for (size_t i = 0; i < model.primitives.size(); i++) {
+		model.primitives[i].mesh.animations.push_back(animation);
+	}
 }
 
 extern "C" NTSHENGN_MODULE_API NtshEngn::AssetLoaderModuleInterface* createModule() {
