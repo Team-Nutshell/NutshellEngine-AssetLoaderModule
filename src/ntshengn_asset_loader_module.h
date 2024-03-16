@@ -22,9 +22,6 @@ namespace NtshEngn {
 		// Loads the font in file at path filePath
 		Font loadFont(const std::string& filePath, float fontHeight);
 
-		// Calculate tangents for mesh
-		void calculateTangents(Mesh& mesh);
-
 	private:
 		void loadSoundWav(const std::string& filePath, Sound& sound);
 		void loadSoundOgg(const std::string& filePath, Sound& sound);
@@ -41,9 +38,6 @@ namespace NtshEngn {
 		void loadGltfAnimation(Model& model, cgltf_animation* node, Bimap<uint32_t, cgltf_node*>& jointNodes);
 
 	private:
-		std::unordered_map<std::string, Image> m_internalImages;
-		std::forward_list<Image> m_fontImages;
-
 		ImageSampler trilinearSampler = { ImageSamplerFilter::Linear,
 			ImageSamplerFilter::Linear,
 			ImageSamplerFilter::Linear,
