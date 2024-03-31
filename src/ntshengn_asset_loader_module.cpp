@@ -492,7 +492,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 				nodeMatrix *= Math::translate(Math::vec3(matrixNode->translation));
 			}
 			if (matrixNode->has_rotation) {
-				nodeMatrix *= Math::to_mat4(Math::quat(matrixNode->rotation[3], matrixNode->rotation[0], matrixNode->rotation[1], matrixNode->rotation[2]));
+				nodeMatrix *= Math::quatToRotationMatrix(Math::quat(matrixNode->rotation[3], matrixNode->rotation[0], matrixNode->rotation[1], matrixNode->rotation[2]));
 			}
 			if (matrixNode->has_scale) {
 				nodeMatrix *= Math::scale(Math::vec3(matrixNode->scale));
@@ -1071,7 +1071,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 					joint.localTransform *= Math::translate(Math::vec3(nodeJoint->translation));
 				}
 				if (nodeJoint->has_rotation) {
-					joint.localTransform *= Math::to_mat4(Math::quat(nodeJoint->rotation[3], nodeJoint->rotation[0], nodeJoint->rotation[1], nodeJoint->rotation[2]));
+					joint.localTransform *= Math::quatToRotationMatrix(Math::quat(nodeJoint->rotation[3], nodeJoint->rotation[0], nodeJoint->rotation[1], nodeJoint->rotation[2]));
 				}
 				if (nodeJoint->has_scale) {
 					joint.localTransform *= Math::scale(Math::vec3(nodeJoint->scale));
@@ -1107,7 +1107,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 					nodeMatrix *= Math::translate(Math::vec3(baseMatrixNode->translation));
 				}
 				if (baseMatrixNode->has_rotation) {
-					nodeMatrix *= Math::to_mat4(Math::quat(baseMatrixNode->rotation[3], baseMatrixNode->rotation[0], baseMatrixNode->rotation[1], baseMatrixNode->rotation[2]));
+					nodeMatrix *= Math::quatToRotationMatrix(Math::quat(baseMatrixNode->rotation[3], baseMatrixNode->rotation[0], baseMatrixNode->rotation[1], baseMatrixNode->rotation[2]));
 				}
 				if (baseMatrixNode->has_scale) {
 					nodeMatrix *= Math::scale(Math::vec3(baseMatrixNode->scale));
