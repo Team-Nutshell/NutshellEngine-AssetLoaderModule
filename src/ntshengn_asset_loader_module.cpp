@@ -731,47 +731,49 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 					cgltf_float* baseColorFactor = pbrMetallicRoughness.base_color_factor;
 					if (baseColorTexture != NULL) {
 						cgltf_image* baseColorImage = baseColorTexture->image;
-						std::string imageURI = baseColorImage->uri;
+						if (baseColorImage->uri) {
+							std::string imageURI = baseColorImage->uri;
 
-						Image* image = nullptr;
+							Image* image = nullptr;
 
-						size_t base64Pos = imageURI.find(";base64,");
-						if (base64Pos != std::string::npos) {
-							cgltf_options options = {};
+							size_t base64Pos = imageURI.find(";base64,");
+							if (base64Pos != std::string::npos) {
+								cgltf_options options = {};
 
-							const std::string uriBase64 = imageURI.substr(base64Pos + 8);
-							const size_t decodedDataSize = ((3 * uriBase64.size()) / 4) - std::count(uriBase64.begin(), uriBase64.end(), '=');
-							std::vector<uint8_t> decodedData(decodedDataSize);
-							cgltf_result result = cgltf_load_buffer_base64(&options, decodedDataSize, uriBase64.c_str(), reinterpret_cast<void**>(decodedData.data()));
-							if (result == cgltf_result_success) {
-								image = assetManager->createImage();
-								loadImageFromMemory(decodedData.data(), decodedDataSize, *image);
-								image->colorSpace = ImageColorSpace::SRGB;
+								const std::string uriBase64 = imageURI.substr(base64Pos + 8);
+								const size_t decodedDataSize = ((3 * uriBase64.size()) / 4) - std::count(uriBase64.begin(), uriBase64.end(), '=');
+								std::vector<uint8_t> decodedData(decodedDataSize);
+								cgltf_result result = cgltf_load_buffer_base64(&options, decodedDataSize, uriBase64.c_str(), reinterpret_cast<void**>(decodedData.data()));
+								if (result == cgltf_result_success) {
+									image = assetManager->createImage();
+									loadImageFromMemory(decodedData.data(), decodedDataSize, *image);
+									image->colorSpace = ImageColorSpace::SRGB;
+								}
+								else {
+									NTSHENGN_MODULE_WARNING("Invalid Base64 data when loading glTF embedded texture for model file \"" + filePath + "\" (base color texture).");
+								}
 							}
 							else {
-								NTSHENGN_MODULE_WARNING("Invalid Base64 data when loading glTF embedded texture for model file \"" + filePath + "\" (base color texture).");
+								image = assetManager->loadImage(File::directory(filePath) + imageURI);
+								if (image) {
+									image->colorSpace = ImageColorSpace::SRGB;
+								}
 							}
-						}
-						else {
-							image = assetManager->loadImage(File::directory(filePath) + imageURI);
-							if (image) {
-								image->colorSpace = ImageColorSpace::SRGB;
-							}
-						}
 
-						primitive.material.diffuseTexture.image = image;
-						if (baseColorTexture->sampler != NULL) {
-							primitive.material.diffuseTexture.imageSampler.magFilter = m_gltfFilterToImageSamplerFilter[baseColorTexture->sampler->mag_filter];
-							primitive.material.diffuseTexture.imageSampler.minFilter = m_gltfFilterToImageSamplerFilter[baseColorTexture->sampler->min_filter];
-							primitive.material.diffuseTexture.imageSampler.mipmapFilter = m_gltfFilterToImageSamplerFilterMipMap[baseColorTexture->sampler->min_filter];
-							primitive.material.diffuseTexture.imageSampler.addressModeU = m_gltfFilterToImageSamplerAddressMode[baseColorTexture->sampler->wrap_s];
-							primitive.material.diffuseTexture.imageSampler.addressModeV = m_gltfFilterToImageSamplerAddressMode[baseColorTexture->sampler->wrap_t];
-							primitive.material.diffuseTexture.imageSampler.addressModeW = ImageSamplerAddressMode::ClampToEdge;
-							primitive.material.diffuseTexture.imageSampler.borderColor = ImageSamplerBorderColor::IntOpaqueBlack;
-							primitive.material.diffuseTexture.imageSampler.anisotropyLevel = 16.0f;
-						}
-						else {
-							primitive.material.diffuseTexture.imageSampler = trilinearSampler;
+							primitive.material.diffuseTexture.image = image;
+							if (baseColorTexture->sampler != NULL) {
+								primitive.material.diffuseTexture.imageSampler.magFilter = m_gltfFilterToImageSamplerFilter[baseColorTexture->sampler->mag_filter];
+								primitive.material.diffuseTexture.imageSampler.minFilter = m_gltfFilterToImageSamplerFilter[baseColorTexture->sampler->min_filter];
+								primitive.material.diffuseTexture.imageSampler.mipmapFilter = m_gltfFilterToImageSamplerFilterMipMap[baseColorTexture->sampler->min_filter];
+								primitive.material.diffuseTexture.imageSampler.addressModeU = m_gltfFilterToImageSamplerAddressMode[baseColorTexture->sampler->wrap_s];
+								primitive.material.diffuseTexture.imageSampler.addressModeV = m_gltfFilterToImageSamplerAddressMode[baseColorTexture->sampler->wrap_t];
+								primitive.material.diffuseTexture.imageSampler.addressModeW = ImageSamplerAddressMode::ClampToEdge;
+								primitive.material.diffuseTexture.imageSampler.borderColor = ImageSamplerBorderColor::IntOpaqueBlack;
+								primitive.material.diffuseTexture.imageSampler.anisotropyLevel = 16.0f;
+							}
+							else {
+								primitive.material.diffuseTexture.imageSampler = trilinearSampler;
+							}
 						}
 					}
 					else if (baseColorFactor != NULL) {
@@ -797,50 +799,52 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 					cgltf_float roughnessFactor = pbrMetallicRoughness.roughness_factor;
 					if (metallicRoughnessTexture != NULL) {
 						cgltf_image* metallicRoughnessImage = metallicRoughnessTexture->image;
-						std::string imageURI = metallicRoughnessImage->uri;
+						if (metallicRoughnessImage->uri) {
+							std::string imageURI = metallicRoughnessImage->uri;
 
-						Image* image = nullptr;
+							Image* image = nullptr;
 
-						size_t base64Pos = imageURI.find(";base64,");
-						if (base64Pos != std::string::npos) {
-							cgltf_options options = {};
+							size_t base64Pos = imageURI.find(";base64,");
+							if (base64Pos != std::string::npos) {
+								cgltf_options options = {};
 
-							const std::string uriBase64 = imageURI.substr(base64Pos + 8);
-							const size_t decodedDataSize = ((3 * uriBase64.size()) / 4) - std::count(uriBase64.begin(), uriBase64.end(), '=');
-							std::vector<uint8_t> decodedData(decodedDataSize);
-							cgltf_result result = cgltf_load_buffer_base64(&options, decodedDataSize, uriBase64.c_str(), reinterpret_cast<void**>(decodedData.data()));
-							if (result == cgltf_result_success) {
-								image = assetManager->createImage();
-								loadImageFromMemory(decodedData.data(), decodedDataSize, *image);
-								image->colorSpace = ImageColorSpace::Linear;
+								const std::string uriBase64 = imageURI.substr(base64Pos + 8);
+								const size_t decodedDataSize = ((3 * uriBase64.size()) / 4) - std::count(uriBase64.begin(), uriBase64.end(), '=');
+								std::vector<uint8_t> decodedData(decodedDataSize);
+								cgltf_result result = cgltf_load_buffer_base64(&options, decodedDataSize, uriBase64.c_str(), reinterpret_cast<void**>(decodedData.data()));
+								if (result == cgltf_result_success) {
+									image = assetManager->createImage();
+									loadImageFromMemory(decodedData.data(), decodedDataSize, *image);
+									image->colorSpace = ImageColorSpace::Linear;
+								}
+								else {
+									NTSHENGN_MODULE_WARNING("Invalid Base64 data when loading glTF embedded texture for model file \"" + filePath + "\" (metallic roughness texture).");
+								}
 							}
 							else {
-								NTSHENGN_MODULE_WARNING("Invalid Base64 data when loading glTF embedded texture for model file \"" + filePath + "\" (metallic roughness texture).");
+								image = assetManager->loadImage(File::directory(filePath) + imageURI);
+								if (image) {
+									image->colorSpace = ImageColorSpace::Linear;
+								}
 							}
-						}
-						else {
-							image = assetManager->loadImage(File::directory(filePath) + imageURI);
-							if (image) {
-								image->colorSpace = ImageColorSpace::Linear;
-							}
-						}
 
-						primitive.material.metalnessTexture.image = image;
-						primitive.material.roughnessTexture.image = primitive.material.metalnessTexture.image;
-						if (metallicRoughnessTexture->sampler != NULL) {
-							primitive.material.metalnessTexture.imageSampler.magFilter = m_gltfFilterToImageSamplerFilter[metallicRoughnessTexture->sampler->mag_filter];
-							primitive.material.metalnessTexture.imageSampler.minFilter = m_gltfFilterToImageSamplerFilter[metallicRoughnessTexture->sampler->min_filter];
-							primitive.material.metalnessTexture.imageSampler.mipmapFilter = m_gltfFilterToImageSamplerFilterMipMap[metallicRoughnessTexture->sampler->min_filter];
-							primitive.material.metalnessTexture.imageSampler.addressModeU = m_gltfFilterToImageSamplerAddressMode[metallicRoughnessTexture->sampler->wrap_s];
-							primitive.material.metalnessTexture.imageSampler.addressModeV = m_gltfFilterToImageSamplerAddressMode[metallicRoughnessTexture->sampler->wrap_t];
-							primitive.material.metalnessTexture.imageSampler.addressModeW = ImageSamplerAddressMode::ClampToEdge;
-							primitive.material.metalnessTexture.imageSampler.borderColor = ImageSamplerBorderColor::IntOpaqueBlack;
-							primitive.material.metalnessTexture.imageSampler.anisotropyLevel = 16.0f;
+							primitive.material.metalnessTexture.image = image;
+							primitive.material.roughnessTexture.image = primitive.material.metalnessTexture.image;
+							if (metallicRoughnessTexture->sampler != NULL) {
+								primitive.material.metalnessTexture.imageSampler.magFilter = m_gltfFilterToImageSamplerFilter[metallicRoughnessTexture->sampler->mag_filter];
+								primitive.material.metalnessTexture.imageSampler.minFilter = m_gltfFilterToImageSamplerFilter[metallicRoughnessTexture->sampler->min_filter];
+								primitive.material.metalnessTexture.imageSampler.mipmapFilter = m_gltfFilterToImageSamplerFilterMipMap[metallicRoughnessTexture->sampler->min_filter];
+								primitive.material.metalnessTexture.imageSampler.addressModeU = m_gltfFilterToImageSamplerAddressMode[metallicRoughnessTexture->sampler->wrap_s];
+								primitive.material.metalnessTexture.imageSampler.addressModeV = m_gltfFilterToImageSamplerAddressMode[metallicRoughnessTexture->sampler->wrap_t];
+								primitive.material.metalnessTexture.imageSampler.addressModeW = ImageSamplerAddressMode::ClampToEdge;
+								primitive.material.metalnessTexture.imageSampler.borderColor = ImageSamplerBorderColor::IntOpaqueBlack;
+								primitive.material.metalnessTexture.imageSampler.anisotropyLevel = 16.0f;
+							}
+							else {
+								primitive.material.metalnessTexture.imageSampler = trilinearSampler;
+							}
+							primitive.material.roughnessTexture.imageSampler = primitive.material.metalnessTexture.imageSampler;
 						}
-						else {
-							primitive.material.metalnessTexture.imageSampler = trilinearSampler;
-						}
-						primitive.material.roughnessTexture.imageSampler = primitive.material.metalnessTexture.imageSampler;
 					}
 					else {
 						Image* image = assetManager->createImage();
@@ -866,47 +870,49 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 				cgltf_texture* normalTexture = normalTextureView.texture;
 				if (normalTexture != NULL) {
 					cgltf_image* normalImage = normalTexture->image;
-					std::string imageURI = normalImage->uri;
+					if (normalImage->uri) {
+						std::string imageURI = normalImage->uri;
 
-					Image* image = nullptr;
+						Image* image = nullptr;
 
-					size_t base64Pos = imageURI.find(";base64,");
-					if (base64Pos != std::string::npos) {
-						cgltf_options options = {};
+						size_t base64Pos = imageURI.find(";base64,");
+						if (base64Pos != std::string::npos) {
+							cgltf_options options = {};
 
-						const std::string uriBase64 = imageURI.substr(base64Pos + 8);
-						const size_t decodedDataSize = ((3 * uriBase64.size()) / 4) - std::count(uriBase64.begin(), uriBase64.end(), '=');
-						std::vector<uint8_t> decodedData(decodedDataSize);
-						cgltf_result result = cgltf_load_buffer_base64(&options, decodedDataSize, uriBase64.c_str(), reinterpret_cast<void**>(decodedData.data()));
-						if (result == cgltf_result_success) {
-							image = assetManager->createImage();
-							loadImageFromMemory(decodedData.data(), decodedDataSize, *image);
-							image->colorSpace = ImageColorSpace::Linear;
+							const std::string uriBase64 = imageURI.substr(base64Pos + 8);
+							const size_t decodedDataSize = ((3 * uriBase64.size()) / 4) - std::count(uriBase64.begin(), uriBase64.end(), '=');
+							std::vector<uint8_t> decodedData(decodedDataSize);
+							cgltf_result result = cgltf_load_buffer_base64(&options, decodedDataSize, uriBase64.c_str(), reinterpret_cast<void**>(decodedData.data()));
+							if (result == cgltf_result_success) {
+								image = assetManager->createImage();
+								loadImageFromMemory(decodedData.data(), decodedDataSize, *image);
+								image->colorSpace = ImageColorSpace::Linear;
+							}
+							else {
+								NTSHENGN_MODULE_WARNING("Invalid Base64 data when loading glTF embedded texture for model file \"" + filePath + "\" (normal texture).");
+							}
 						}
 						else {
-							NTSHENGN_MODULE_WARNING("Invalid Base64 data when loading glTF embedded texture for model file \"" + filePath + "\" (normal texture).");
+							image = assetManager->loadImage(File::directory(filePath) + imageURI);
+							if (image) {
+								image->colorSpace = ImageColorSpace::Linear;
+							}
 						}
-					}
-					else {
-						image = assetManager->loadImage(File::directory(filePath) + imageURI);
-						if (image) {
-							image->colorSpace = ImageColorSpace::Linear;
-						}
-					}
 
-					primitive.material.normalTexture.image = image;
-					if (normalTexture->sampler != NULL) {
-						primitive.material.normalTexture.imageSampler.magFilter = m_gltfFilterToImageSamplerFilter[normalTexture->sampler->mag_filter];
-						primitive.material.normalTexture.imageSampler.minFilter = m_gltfFilterToImageSamplerFilter[normalTexture->sampler->min_filter];
-						primitive.material.normalTexture.imageSampler.mipmapFilter = m_gltfFilterToImageSamplerFilterMipMap[normalTexture->sampler->min_filter];
-						primitive.material.normalTexture.imageSampler.addressModeU = m_gltfFilterToImageSamplerAddressMode[normalTexture->sampler->wrap_s];
-						primitive.material.normalTexture.imageSampler.addressModeV = m_gltfFilterToImageSamplerAddressMode[normalTexture->sampler->wrap_t];
-						primitive.material.normalTexture.imageSampler.addressModeW = ImageSamplerAddressMode::ClampToEdge;
-						primitive.material.normalTexture.imageSampler.borderColor = ImageSamplerBorderColor::IntOpaqueBlack;
-						primitive.material.normalTexture.imageSampler.anisotropyLevel = 16.0f;
-					}
-					else {
-						primitive.material.normalTexture.imageSampler = trilinearSampler;
+						primitive.material.normalTexture.image = image;
+						if (normalTexture->sampler != NULL) {
+							primitive.material.normalTexture.imageSampler.magFilter = m_gltfFilterToImageSamplerFilter[normalTexture->sampler->mag_filter];
+							primitive.material.normalTexture.imageSampler.minFilter = m_gltfFilterToImageSamplerFilter[normalTexture->sampler->min_filter];
+							primitive.material.normalTexture.imageSampler.mipmapFilter = m_gltfFilterToImageSamplerFilterMipMap[normalTexture->sampler->min_filter];
+							primitive.material.normalTexture.imageSampler.addressModeU = m_gltfFilterToImageSamplerAddressMode[normalTexture->sampler->wrap_s];
+							primitive.material.normalTexture.imageSampler.addressModeV = m_gltfFilterToImageSamplerAddressMode[normalTexture->sampler->wrap_t];
+							primitive.material.normalTexture.imageSampler.addressModeW = ImageSamplerAddressMode::ClampToEdge;
+							primitive.material.normalTexture.imageSampler.borderColor = ImageSamplerBorderColor::IntOpaqueBlack;
+							primitive.material.normalTexture.imageSampler.anisotropyLevel = 16.0f;
+						}
+						else {
+							primitive.material.normalTexture.imageSampler = trilinearSampler;
+						}
 					}
 				}
 
@@ -916,47 +922,49 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 				cgltf_float* emissiveFactor = primitiveMaterial->emissive_factor;
 				if (emissiveTexture != NULL) {
 					cgltf_image* emissiveImage = emissiveTexture->image;
-					std::string imageURI = emissiveImage->uri;
+					if (emissiveImage->uri) {
+						std::string imageURI = emissiveImage->uri;
 
-					Image* image = nullptr;
+						Image* image = nullptr;
 
-					size_t base64Pos = imageURI.find(";base64,");
-					if (base64Pos != std::string::npos) {
-						cgltf_options options = {};
+						size_t base64Pos = imageURI.find(";base64,");
+						if (base64Pos != std::string::npos) {
+							cgltf_options options = {};
 
-						const std::string uriBase64 = imageURI.substr(base64Pos + 8);
-						const size_t decodedDataSize = ((3 * uriBase64.size()) / 4) - std::count(uriBase64.begin(), uriBase64.end(), '=');
-						std::vector<uint8_t> decodedData(decodedDataSize);
-						cgltf_result result = cgltf_load_buffer_base64(&options, decodedDataSize, uriBase64.c_str(), reinterpret_cast<void**>(decodedData.data()));
-						if (result == cgltf_result_success) {
-							image = assetManager->createImage();
-							loadImageFromMemory(decodedData.data(), decodedDataSize, *image);
-							image->colorSpace = ImageColorSpace::Linear;
+							const std::string uriBase64 = imageURI.substr(base64Pos + 8);
+							const size_t decodedDataSize = ((3 * uriBase64.size()) / 4) - std::count(uriBase64.begin(), uriBase64.end(), '=');
+							std::vector<uint8_t> decodedData(decodedDataSize);
+							cgltf_result result = cgltf_load_buffer_base64(&options, decodedDataSize, uriBase64.c_str(), reinterpret_cast<void**>(decodedData.data()));
+							if (result == cgltf_result_success) {
+								image = assetManager->createImage();
+								loadImageFromMemory(decodedData.data(), decodedDataSize, *image);
+								image->colorSpace = ImageColorSpace::Linear;
+							}
+							else {
+								NTSHENGN_MODULE_WARNING("Invalid Base64 data when loading glTF embedded texture for model file \"" + filePath + "\" (emissive texture).");
+							}
 						}
 						else {
-							NTSHENGN_MODULE_WARNING("Invalid Base64 data when loading glTF embedded texture for model file \"" + filePath + "\" (emissive texture).");
+							image = assetManager->loadImage(File::directory(filePath) + imageURI);
+							if (image) {
+								image->colorSpace = ImageColorSpace::SRGB;
+							}
 						}
-					}
-					else {
-						image = assetManager->loadImage(File::directory(filePath) + imageURI);
-						if (image) {
-							image->colorSpace = ImageColorSpace::SRGB;
-						}
-					}
 
-					primitive.material.emissiveTexture.image = image;
-					if (emissiveTexture->sampler != NULL) {
-						primitive.material.emissiveTexture.imageSampler.magFilter = m_gltfFilterToImageSamplerFilter[emissiveTexture->sampler->mag_filter];
-						primitive.material.emissiveTexture.imageSampler.minFilter = m_gltfFilterToImageSamplerFilter[emissiveTexture->sampler->min_filter];
-						primitive.material.emissiveTexture.imageSampler.mipmapFilter = m_gltfFilterToImageSamplerFilterMipMap[emissiveTexture->sampler->min_filter];
-						primitive.material.emissiveTexture.imageSampler.addressModeU = m_gltfFilterToImageSamplerAddressMode[emissiveTexture->sampler->wrap_s];
-						primitive.material.emissiveTexture.imageSampler.addressModeV = m_gltfFilterToImageSamplerAddressMode[emissiveTexture->sampler->wrap_t];
-						primitive.material.emissiveTexture.imageSampler.addressModeW = ImageSamplerAddressMode::ClampToEdge;
-						primitive.material.emissiveTexture.imageSampler.borderColor = ImageSamplerBorderColor::IntOpaqueBlack;
-						primitive.material.emissiveTexture.imageSampler.anisotropyLevel = 16.0f;
-					}
-					else {
-						primitive.material.emissiveTexture.imageSampler = trilinearSampler;
+						primitive.material.emissiveTexture.image = image;
+						if (emissiveTexture->sampler != NULL) {
+							primitive.material.emissiveTexture.imageSampler.magFilter = m_gltfFilterToImageSamplerFilter[emissiveTexture->sampler->mag_filter];
+							primitive.material.emissiveTexture.imageSampler.minFilter = m_gltfFilterToImageSamplerFilter[emissiveTexture->sampler->min_filter];
+							primitive.material.emissiveTexture.imageSampler.mipmapFilter = m_gltfFilterToImageSamplerFilterMipMap[emissiveTexture->sampler->min_filter];
+							primitive.material.emissiveTexture.imageSampler.addressModeU = m_gltfFilterToImageSamplerAddressMode[emissiveTexture->sampler->wrap_s];
+							primitive.material.emissiveTexture.imageSampler.addressModeV = m_gltfFilterToImageSamplerAddressMode[emissiveTexture->sampler->wrap_t];
+							primitive.material.emissiveTexture.imageSampler.addressModeW = ImageSamplerAddressMode::ClampToEdge;
+							primitive.material.emissiveTexture.imageSampler.borderColor = ImageSamplerBorderColor::IntOpaqueBlack;
+							primitive.material.emissiveTexture.imageSampler.anisotropyLevel = 16.0f;
+						}
+						else {
+							primitive.material.emissiveTexture.imageSampler = trilinearSampler;
+						}
 					}
 				}
 				else if (emissiveFactor != NULL) {
@@ -983,47 +991,49 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 				cgltf_texture* occlusionTexture = occlusionTextureView.texture;
 				if (occlusionTexture != NULL) {
 					cgltf_image* occlusionImage = occlusionTexture->image;
-					std::string imageURI = occlusionImage->uri;
+					if (occlusionImage->uri) {
+						std::string imageURI = occlusionImage->uri;
 
-					Image* image = nullptr;
+						Image* image = nullptr;
 
-					size_t base64Pos = imageURI.find(";base64,");
-					if (base64Pos != std::string::npos) {
-						cgltf_options options = {};
+						size_t base64Pos = imageURI.find(";base64,");
+						if (base64Pos != std::string::npos) {
+							cgltf_options options = {};
 
-						const std::string uriBase64 = imageURI.substr(base64Pos + 8);
-						const size_t decodedDataSize = ((3 * uriBase64.size()) / 4) - std::count(uriBase64.begin(), uriBase64.end(), '=');
-						std::vector<uint8_t> decodedData(decodedDataSize);
-						cgltf_result result = cgltf_load_buffer_base64(&options, decodedDataSize, uriBase64.c_str(), reinterpret_cast<void**>(decodedData.data()));
-						if (result == cgltf_result_success) {
-							image = assetManager->createImage();
-							loadImageFromMemory(decodedData.data(), decodedDataSize, *image);
-							image->colorSpace = ImageColorSpace::Linear;
+							const std::string uriBase64 = imageURI.substr(base64Pos + 8);
+							const size_t decodedDataSize = ((3 * uriBase64.size()) / 4) - std::count(uriBase64.begin(), uriBase64.end(), '=');
+							std::vector<uint8_t> decodedData(decodedDataSize);
+							cgltf_result result = cgltf_load_buffer_base64(&options, decodedDataSize, uriBase64.c_str(), reinterpret_cast<void**>(decodedData.data()));
+							if (result == cgltf_result_success) {
+								image = assetManager->createImage();
+								loadImageFromMemory(decodedData.data(), decodedDataSize, *image);
+								image->colorSpace = ImageColorSpace::Linear;
+							}
+							else {
+								NTSHENGN_MODULE_WARNING("Invalid Base64 data when loading glTF embedded texture for model file \"" + filePath + "\" (occlusion texture).");
+							}
 						}
 						else {
-							NTSHENGN_MODULE_WARNING("Invalid Base64 data when loading glTF embedded texture for model file \"" + filePath + "\" (occlusion texture).");
+							image = assetManager->loadImage(File::directory(filePath) + imageURI);
+							if (image) {
+								image->colorSpace = ImageColorSpace::Linear;
+							}
 						}
-					}
-					else {
-						image = assetManager->loadImage(File::directory(filePath) + imageURI);
-						if (image) {
-							image->colorSpace = ImageColorSpace::Linear;
-						}
-					}
 
-					primitive.material.occlusionTexture.image = image;
-					if (occlusionTexture->sampler != NULL) {
-						primitive.material.occlusionTexture.imageSampler.magFilter = m_gltfFilterToImageSamplerFilter[occlusionTexture->sampler->mag_filter];
-						primitive.material.occlusionTexture.imageSampler.minFilter = m_gltfFilterToImageSamplerFilter[occlusionTexture->sampler->min_filter];
-						primitive.material.occlusionTexture.imageSampler.mipmapFilter = m_gltfFilterToImageSamplerFilterMipMap[occlusionTexture->sampler->min_filter];
-						primitive.material.occlusionTexture.imageSampler.addressModeU = m_gltfFilterToImageSamplerAddressMode[occlusionTexture->sampler->wrap_s];
-						primitive.material.occlusionTexture.imageSampler.addressModeV = m_gltfFilterToImageSamplerAddressMode[occlusionTexture->sampler->wrap_t];
-						primitive.material.occlusionTexture.imageSampler.addressModeW = ImageSamplerAddressMode::ClampToEdge;
-						primitive.material.occlusionTexture.imageSampler.borderColor = ImageSamplerBorderColor::IntOpaqueBlack;
-						primitive.material.occlusionTexture.imageSampler.anisotropyLevel = 16.0f;
-					}
-					else {
-						primitive.material.occlusionTexture.imageSampler = trilinearSampler;
+						primitive.material.occlusionTexture.image = image;
+						if (occlusionTexture->sampler != NULL) {
+							primitive.material.occlusionTexture.imageSampler.magFilter = m_gltfFilterToImageSamplerFilter[occlusionTexture->sampler->mag_filter];
+							primitive.material.occlusionTexture.imageSampler.minFilter = m_gltfFilterToImageSamplerFilter[occlusionTexture->sampler->min_filter];
+							primitive.material.occlusionTexture.imageSampler.mipmapFilter = m_gltfFilterToImageSamplerFilterMipMap[occlusionTexture->sampler->min_filter];
+							primitive.material.occlusionTexture.imageSampler.addressModeU = m_gltfFilterToImageSamplerAddressMode[occlusionTexture->sampler->wrap_s];
+							primitive.material.occlusionTexture.imageSampler.addressModeV = m_gltfFilterToImageSamplerAddressMode[occlusionTexture->sampler->wrap_t];
+							primitive.material.occlusionTexture.imageSampler.addressModeW = ImageSamplerAddressMode::ClampToEdge;
+							primitive.material.occlusionTexture.imageSampler.borderColor = ImageSamplerBorderColor::IntOpaqueBlack;
+							primitive.material.occlusionTexture.imageSampler.anisotropyLevel = 16.0f;
+						}
+						else {
+							primitive.material.occlusionTexture.imageSampler = trilinearSampler;
+						}
 					}
 				}
 
