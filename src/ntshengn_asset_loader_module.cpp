@@ -480,10 +480,10 @@ void NtshEngn::AssetLoaderModule::loadModelGltf(const std::string& filePath, Mod
 }
 
 void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Model& model, cgltf_node* node, Bimap<uint32_t, cgltf_node*>& jointNodes) {
-	Math::mat4 modelMatrix;
+	Math::mat4 modelMatrix = Math::mat4::identity();
 	cgltf_node* matrixNode = node;
 	while (matrixNode) {
-		Math::mat4 nodeMatrix;
+		Math::mat4 nodeMatrix = Math::mat4::identity();
 		if (matrixNode->has_matrix) {
 			nodeMatrix = Math::mat4(matrixNode->matrix);
 		}
@@ -1108,7 +1108,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 
 		cgltf_node* baseMatrixNode = jointNodes[skin.rootJoint]->parent;
 		while (baseMatrixNode) {
-			Math::mat4 nodeMatrix;
+			Math::mat4 nodeMatrix = Math::mat4::identity();
 			if (baseMatrixNode->has_matrix) {
 				nodeMatrix = Math::mat4(baseMatrixNode->matrix);
 			}
