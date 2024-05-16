@@ -16,7 +16,7 @@
 #pragma warning(disable : 4456)
 #pragma warning(disable : 4457)
 #pragma warning(disable : 4701)
-#include "../Common/asset_manager/ntshengn_asset_manager.h"
+#include "../Common/asset_manager/ntshengn_asset_manager_interface.h"
 #include "../external/stb/stb_vorbis.c"
 #pragma warning(pop)
 #include <cstddef>

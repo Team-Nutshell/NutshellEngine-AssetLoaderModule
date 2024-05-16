@@ -1,5 +1,5 @@
 #pragma once
-#include "../Common/module_interfaces/ntshengn_asset_loader_module_interface.h"
+#include "../Common/modules/ntshengn_asset_loader_module_interface.h"
 #include "../Common/utils/ntshengn_utils_math.h"
 #include "../Common/utils/ntshengn_utils_bimap.h"
 #include "../external/cgltf/cgltf.h"
