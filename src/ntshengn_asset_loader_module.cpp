@@ -33,11 +33,6 @@ NtshEngn::Font NtshEngn::AssetLoaderModule::loadFont(const std::string& filePath
 	return Font();
 }
 
-void NtshEngn::AssetLoaderModule::calculateTangents(Mesh& mesh) {
-	NTSHENGN_UNUSED(mesh);
-	NTSHENGN_MODULE_FUNCTION_NOT_IMPLEMENTED();
-}
-
 extern "C" NTSHENGN_MODULE_API NtshEngn::AssetLoaderModuleInterface* createModule() {
 	return new NtshEngn::AssetLoaderModule;
 }

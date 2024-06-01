@@ -15,9 +15,6 @@ namespace NtshEngn {
 		Model loadModel(const std::string& filePath);
 		// Loads the font in file at path filePath
 		Font loadFont(const std::string& filePath, float fontHeight);
-
-		// Calculate tangents for mesh
-		void calculateTangents(Mesh& mesh);
 	};
 
 }
