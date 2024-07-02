@@ -1,4 +1,5 @@
 #include "ntshengn_asset_loader_module.h"
+#include "../Common/asset_manager/ntshengn_asset_manager_interface.h"
 #include "../Module/utils/ntshengn_module_defines.h"
 #include "../Module/utils/ntshengn_dynamic_library.h"
 #include "../Common/utils/ntshengn_defines.h"
@@ -10,15 +11,16 @@
 #include "../external/stb/stb_image.h"
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "../external/stb/stb_truetype.h"
+#if defined(NTSHENGN_COMPILER_MSVC)
 #pragma warning(push)
 #pragma warning(disable : 4244)
 #pragma warning(disable : 4245)
 #pragma warning(disable : 4456)
 #pragma warning(disable : 4457)
 #pragma warning(disable : 4701)
-#include "../Common/asset_manager/ntshengn_asset_manager_interface.h"
 #include "../external/stb/stb_vorbis.c"
 #pragma warning(pop)
+#endif
 #include <cstddef>
 #include <cmath>
 #include <iterator>
@@ -1217,6 +1219,9 @@ void NtshEngn::AssetLoaderModule::loadGltfAnimation(Model& model, cgltf_animatio
 			case AnimationChannelTransformType::Rotation:
 				keyframe.value = { *(reinterpret_cast<float*>(animationSamplerOutputBufferOffset) + 3), *(reinterpret_cast<float*>(animationSamplerOutputBufferOffset) + 0), *(reinterpret_cast<float*>(animationSamplerOutputBufferOffset) + 1), *(reinterpret_cast<float*>(animationSamplerOutputBufferOffset) + 2) };
 				animationSamplerOutputBufferOffset += sizeof(float) * 4;
+				break;
+
+			default:
 				break;
 			}
 
