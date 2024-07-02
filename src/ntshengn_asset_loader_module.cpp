@@ -18,7 +18,9 @@
 #pragma warning(disable : 4456)
 #pragma warning(disable : 4457)
 #pragma warning(disable : 4701)
+#endif
 #include "../external/stb/stb_vorbis.c"
+#if defined(NTSHENGN_COMPILER_MSVC)
 #pragma warning(pop)
 #endif
 #include <cstddef>
