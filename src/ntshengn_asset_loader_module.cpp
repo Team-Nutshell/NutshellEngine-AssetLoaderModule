@@ -230,7 +230,7 @@ void NtshEngn::AssetLoaderModule::loadSoundOgg(const std::string& filePath, Soun
 	short* data;
 	size = stb_vorbis_decode_filename(filePath.c_str(), &channels, &sound.sampleRate, &data);
 
-	if (sound.size == -1) {
+	if (size < 0) {
 		NTSHENGN_MODULE_WARNING("Unknown error when loading \"" + filePath + "\" Ogg Vorbis sound file.");
 	}
 
