@@ -617,17 +617,17 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 				Vertex vertex;
 
 				if (!node->skin) {
-					vertex.position = modelMatrix * Math::vec4(Math::vec3(position + positionCursor), 1.0f);
+					vertex.position = Math::vec3(position + positionCursor);
 					positionCursor += (positionStride / sizeof(float));
 
-					vertex.normal = (normalCount != 0) ? Math::normalize(Math::vec3(Math::transpose(Math::inverse(modelMatrix)) * Math::vec4(Math::vec3(normal + normalCursor), 0.0f))) : Math::vec3(0.0f, 0.0f, 0.0f);
+					vertex.normal = (normalCount != 0) ? Math::vec3(normal + normalCursor) : Math::vec3(0.0f, 0.0f, 0.0f);
 					normalCursor += (normalStride / sizeof(float));
 				}
 				else {
 					vertex.position = Math::vec3(position + positionCursor);
 					positionCursor += (positionStride / sizeof(float));
 
-					vertex.normal = (normalCount != 0) ? Math::normalize(Math::vec3(normal + normalCursor)) : Math::vec3(0.0f, 0.0f, 0.0f);
+					vertex.normal = (normalCount != 0) ? Math::vec3(normal + normalCursor) : Math::vec3(0.0f, 0.0f, 0.0f);
 					normalCursor += (normalStride / sizeof(float));
 				}
 
