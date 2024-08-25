@@ -95,6 +95,15 @@ NtshEngn::Model NtshEngn::AssetLoaderModule::loadModel(const std::string& filePa
 	return newModel;
 }
 
+NtshEngn::Material NtshEngn::AssetLoaderModule::loadMaterial(const std::string& filePath) {
+	Material newMaterial;
+
+	std::string extension = File::extension(filePath);
+	NTSHENGN_MODULE_WARNING("Material file extension \"." + extension + "\" not supported.");
+
+	return newMaterial;
+}
+
 NtshEngn::Font NtshEngn::AssetLoaderModule::loadFont(const std::string& filePath, float fontHeight) {
 	Font newFont;
 

@@ -19,6 +19,8 @@ namespace NtshEngn {
 		Image loadImage(const std::string& filePath);
 		// Loads the model in file at path filePath
 		Model loadModel(const std::string& filePath);
+		// Loads the material in file at path filePath
+		Material loadMaterial(const std::string& filePath);
 		// Loads the font in file at path filePath
 		Font loadFont(const std::string& filePath, float fontHeight);
 
