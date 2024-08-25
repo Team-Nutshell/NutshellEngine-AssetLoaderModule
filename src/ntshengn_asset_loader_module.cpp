@@ -25,6 +25,13 @@ NtshEngn::Model NtshEngn::AssetLoaderModule::loadModel(const std::string& filePa
 	return Model();
 }
 
+NtshEngn::Material NtshEngn::AssetLoaderModule::loadMaterial(const std::string& filePath) {
+	NTSHENGN_UNUSED(filePath);
+	NTSHENGN_MODULE_FUNCTION_NOT_IMPLEMENTED();
+
+	return Material();
+}
+
 NtshEngn::Font NtshEngn::AssetLoaderModule::loadFont(const std::string& filePath, float fontHeight) {
 	NTSHENGN_UNUSED(filePath);
 	NTSHENGN_UNUSED(fontHeight);
