@@ -33,6 +33,8 @@ namespace NtshEngn {
 
 		void loadModelObj(const std::string& filePath, Model& model);
 
+		std::unordered_map<std::string, Material> loadMaterialMtl(const std::string& filePath);
+
 		void loadFontTtf(const std::string& filePath, float fontHeight, Font& font);
 
 		void loadModelGltf(const std::string& filePath, Model& model);

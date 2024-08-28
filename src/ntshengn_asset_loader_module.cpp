@@ -315,13 +315,20 @@ void NtshEngn::AssetLoaderModule::loadModelObj(const std::string& filePath, Mode
 		return;
 	}
 
-	std::vector<std::array<float, 3>> positions;
-	std::vector<std::array<float, 3>> normals;
-	std::vector<std::array<float, 2>> uvs;
+	std::vector<Math::vec3> positions;
+	std::vector<Math::vec3> normals;
+	std::vector<Math::vec2> uvs;
 
 	std::unordered_map<std::string, uint32_t> uniqueVertices;
-	Mesh mesh = {};
-	mesh.topology = MeshTopology::TriangleList;
+	model.primitives.push_back(ModelPrimitive());
+	ModelPrimitive* currentPrimitive = &model.primitives.back();
+	currentPrimitive->mesh.topology = MeshTopology::TriangleList;
+
+	std::string modelDirectory = filePath.substr(0, filePath.rfind('/'));
+	std::unordered_map<std::string, Material> mtlMaterials;
+
+	bool hasNormals = false;
+	bool hasUvs = false;
 
 	std::string line;
 	while (std::getline(file, line)) {
@@ -363,6 +370,39 @@ void NtshEngn::AssetLoaderModule::loadModelObj(const std::string& filePath, Mode
 				static_cast<float>(std::atof(tokens[2].c_str()))
 				});
 		}
+		// Object
+		else if (tokens[0] == "o") {
+			if (!currentPrimitive->mesh.indices.empty()) {
+				if (hasNormals && hasUvs) {
+					assetManager->calculateTangents(currentPrimitive->mesh);
+				}
+				model.primitives.push_back(ModelPrimitive());
+				currentPrimitive = &model.primitives.back();
+				uniqueVertices.clear();
+				hasNormals = false;
+				hasUvs = false;
+			}
+		}
+		// Material
+		else if (tokens[0] == "mtllib") {
+			std::string materialPath = modelDirectory + "/" + tokens[1];
+			mtlMaterials = loadMaterialMtl(materialPath);
+		}
+		else if (tokens[0] == "usemtl") {
+			if (!currentPrimitive->mesh.indices.empty()) {
+				if (hasNormals && hasUvs) {
+					assetManager->calculateTangents(currentPrimitive->mesh);
+				}
+				model.primitives.push_back(ModelPrimitive());
+				currentPrimitive = &model.primitives.back();
+				uniqueVertices.clear();
+				hasNormals = false;
+				hasUvs = false;
+			}
+			if (mtlMaterials.find(tokens[1]) != mtlMaterials.end()) {
+				currentPrimitive->material = mtlMaterials[tokens[1]];
+			}
+		}
 		// Face
 		else if (tokens[0] == "f") {
 			std::vector<uint32_t> tmpIndices;
@@ -383,27 +423,29 @@ void NtshEngn::AssetLoaderModule::loadModelObj(const std::string& filePath, Mode
 						// v/vt/vn
 						// Position index
 						if (j == 0) {
-							vertex.position[0] = positions[static_cast<size_t>(std::atoi(valueIndices[j].c_str())) - 1][0];
-							vertex.position[1] = positions[static_cast<size_t>(std::atoi(valueIndices[j].c_str())) - 1][1];
-							vertex.position[2] = positions[static_cast<size_t>(std::atoi(valueIndices[j].c_str())) - 1][2];
+							vertex.position = positions[static_cast<size_t>(std::atoi(valueIndices[j].c_str())) - 1];
 						}
 						// UV index
 						else if (j == 1) {
-							vertex.uv[0] = uvs[static_cast<size_t>(std::atoi(valueIndices[j].c_str())) - 1][0];
-							vertex.uv[1] = uvs[static_cast<size_t>(std::atoi(valueIndices[j].c_str())) - 1][1];
+							hasUvs = true;
+							vertex.uv = uvs[static_cast<size_t>(std::atoi(valueIndices[j].c_str())) - 1];
 						}
 						// Normal index
 						else if (j == 2) {
-							vertex.normal[0] = normals[static_cast<size_t>(std::atoi(valueIndices[j].c_str())) - 1][0];
-							vertex.normal[1] = normals[static_cast<size_t>(std::atoi(valueIndices[j].c_str())) - 1][1];
-							vertex.normal[2] = normals[static_cast<size_t>(std::atoi(valueIndices[j].c_str())) - 1][2];
+							hasNormals = true;
+							vertex.normal = normals[static_cast<size_t>(std::atoi(valueIndices[j].c_str())) - 1];
 						}
 					}
 				}
 
+				if (!hasUvs) {
+					vertex.uv = Math::vec2(0.5f, 0.5f);
+				}
+				vertex.tangent = Math::vec4(0.5f, 0.5f, 0.5f, 1.0f);
+
 				if (uniqueVertices.count(tokens[i]) == 0) {
-					uniqueVertices[tokens[i]] = static_cast<uint32_t>(mesh.vertices.size());
-					mesh.vertices.push_back(vertex);
+					uniqueVertices[tokens[i]] = static_cast<uint32_t>(currentPrimitive->mesh.vertices.size());
+					currentPrimitive->mesh.vertices.push_back(vertex);
 				}
 				tmpIndices.push_back(uniqueVertices[tokens[i]]);
 			}
@@ -411,28 +453,115 @@ void NtshEngn::AssetLoaderModule::loadModelObj(const std::string& filePath, Mode
 			// Face can be a triangle or a rectangle
 			// Triangle
 			if (tmpIndices.size() == 3) {
-				mesh.indices.insert(mesh.indices.end(), std::make_move_iterator(tmpIndices.begin()), std::make_move_iterator(tmpIndices.end()));
+				currentPrimitive->mesh.indices.insert(currentPrimitive->mesh.indices.end(), std::make_move_iterator(tmpIndices.begin()), std::make_move_iterator(tmpIndices.end()));
 			}
 			// Rectangle
 			else if (tmpIndices.size() == 4) {
 				// Triangle 1
-				mesh.indices.push_back(tmpIndices[0]);
-				mesh.indices.push_back(tmpIndices[1]);
-				mesh.indices.push_back(tmpIndices[2]);
+				currentPrimitive->mesh.indices.push_back(tmpIndices[0]);
+				currentPrimitive->mesh.indices.push_back(tmpIndices[1]);
+				currentPrimitive->mesh.indices.push_back(tmpIndices[2]);
 
 				// Triangle 2
-				mesh.indices.push_back(tmpIndices[0]);
-				mesh.indices.push_back(tmpIndices[2]);
-				mesh.indices.push_back(tmpIndices[3]);
+				currentPrimitive->mesh.indices.push_back(tmpIndices[0]);
+				currentPrimitive->mesh.indices.push_back(tmpIndices[2]);
+				currentPrimitive->mesh.indices.push_back(tmpIndices[3]);
 			}
 		}
 	}
 
-	assetManager->calculateTangents(mesh);
+	file.close();
+}
 
-	model.primitives.push_back({ mesh, {} });
+std::unordered_map<std::string, NtshEngn::Material> NtshEngn::AssetLoaderModule::loadMaterialMtl(const std::string& filePath) {
+	std::unordered_map<std::string, Material> mtlMaterials;
+
+	std::ifstream file(filePath);
+
+	// Open file
+	if (!file.is_open()) {
+		NTSHENGN_MODULE_WARNING("Could not open material file \"" + filePath + "\".");
+		return mtlMaterials;
+	}
+
+	Material* currentMaterial = nullptr;
+
+	std::string materialDirectory = filePath.substr(0, filePath.rfind('/'));
+
+	std::string line;
+	while (std::getline(file, line)) {
+		// Ignore comment
+		if (line[0] == '#') {
+			continue;
+		}
+
+		// Parse line
+		std::vector<std::string> tokens;
+		size_t spacePosition = 0;
+		while ((spacePosition = line.find(' ')) != std::string::npos) {
+			tokens.push_back(line.substr(0, spacePosition));
+			line.erase(0, spacePosition + 1);
+		}
+		tokens.push_back(line);
+
+		// Parse tokens
+		if (tokens[0] == "newmtl") {
+			mtlMaterials[tokens[1]] = Material();
+			currentMaterial = &mtlMaterials[tokens[1]];
+		}
+		else if (tokens[0] == "Kd") {
+			std::string mapKey = "srgb " + tokens[1] + " " + tokens[2] + " " + tokens[3];
+
+			Image* image = assetManager->createImage();
+			image->width = 1;
+			image->height = 1;
+			image->format = ImageFormat::R8G8B8A8;
+			image->colorSpace = ImageColorSpace::SRGB;
+			image->data = { static_cast<uint8_t>(round(255.0f * std::atof(tokens[1].c_str()))),
+				static_cast<uint8_t>(round(255.0f * std::atof(tokens[2].c_str()))),
+				static_cast<uint8_t>(round(255.0f * std::atof(tokens[3].c_str()))),
+				255
+			};
+
+			if (currentMaterial) {
+				currentMaterial->diffuseTexture.image = image;
+			}
+		}
+		else if (tokens[0] == "map_Kd") {
+			Image* image = assetManager->loadImage(materialDirectory + "/" + tokens[1]);
+			if (currentMaterial) {
+				currentMaterial->diffuseTexture.image = image;
+			}
+		}
+		else if (tokens[0] == "Ke") {
+			std::string mapKey = "srgb " + tokens[1] + " " + tokens[2] + " " + tokens[3];
+
+			Image* image = assetManager->createImage();
+			image->width = 1;
+			image->height = 1;
+			image->format = ImageFormat::R8G8B8A8;
+			image->colorSpace = ImageColorSpace::SRGB;
+			image->data = { static_cast<uint8_t>(round(255.0f * std::atof(tokens[1].c_str()))),
+				static_cast<uint8_t>(round(255.0f * std::atof(tokens[2].c_str()))),
+				static_cast<uint8_t>(round(255.0f * std::atof(tokens[3].c_str()))),
+				255
+			};
+
+			if (currentMaterial) {
+				currentMaterial->emissiveTexture.image = image;
+			}
+		}
+		else if (tokens[0] == "map_Ke") {
+			Image* image = assetManager->loadImage(materialDirectory + "/" + tokens[1]);
+			if (currentMaterial) {
+				currentMaterial->emissiveTexture.image = image;
+			}
+		}
+	}
 
 	file.close();
+
+	return mtlMaterials;
 }
 
 void NtshEngn::AssetLoaderModule::loadFontTtf(const std::string& filePath, float fontHeight, Font& font) {
