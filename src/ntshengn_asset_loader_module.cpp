@@ -103,7 +103,8 @@ NtshEngn::Font NtshEngn::AssetLoaderModule::loadFont(const std::string& filePath
 	Font newFont;
 
 	std::string extension = File::extension(filePath);
-	if (extension == "ttf") {
+	if (extension == "ttf" ||
+		extension == "ttc") {
 		loadFontTtf(filePath, fontHeight, newFont);
 	}
 	else {
@@ -570,18 +571,24 @@ std::unordered_map<std::string, NtshEngn::Material> NtshEngn::AssetLoaderModule:
 void NtshEngn::AssetLoaderModule::loadFontTtf(const std::string& filePath, float fontHeight, Font& font) {
 	stbtt_fontinfo fontInfo;
 
-	int firstCharacter = 32;
-	int lastCharacter = 128;
-
 	std::string fileContent = File::readBinary(filePath);
-	stbtt_InitFont(&fontInfo, reinterpret_cast<const unsigned char*>(fileContent.c_str()), 0);
+
+	int fontOffset = stbtt_GetFontOffsetForIndex(reinterpret_cast<const unsigned char*>(fileContent.c_str()), 0);
+	stbtt_InitFont(&fontInfo, reinterpret_cast<const unsigned char*>(fileContent.c_str()), fontOffset);
 	float scale = stbtt_ScaleForPixelHeight(&fontInfo, fontHeight);
+
+	int firstCharacter = fontInfo.fontstart;
+	int lastCharacter = firstCharacter + fontInfo.numGlyphs;
 
 	int ascent;
 	int descent;
 	stbtt_GetFontVMetrics(&fontInfo, &ascent, &descent, nullptr);
 
-	int width = 0;
+	uint32_t width = 1024;
+
+	uint32_t x = 1;
+	uint32_t y = 1;
+	uint32_t yBottom = 1;
 	for (int codepoint = firstCharacter; codepoint < lastCharacter; codepoint++) {
 		int x0;
 		int y0;
@@ -589,25 +596,42 @@ void NtshEngn::AssetLoaderModule::loadFontTtf(const std::string& filePath, float
 		int y1;
 		stbtt_GetCodepointBitmapBox(&fontInfo, codepoint, scale, scale, &x0, &y0, &x1, &y1);
 
-		width += (x1 - x0) + 1;
+		uint32_t glyphWidth = x1 - x0;
+		uint32_t glyphHeight = y1 - y0;
+
+		if ((x + glyphWidth + 1) >= width) {
+			x = 1;
+			y = yBottom;
+		}
+
+		if ((glyphWidth + 1) >= width) {
+			width = glyphWidth + 1;
+		}
+
+		x += glyphWidth + 1;
+		if ((y + glyphHeight + 1) > yBottom) {
+			yBottom = y + glyphHeight + 1;
+		}
 	}
 
-	int height = static_cast<int>(scale * static_cast<float>(ascent - descent));
+	uint32_t height = yBottom;
 
 	float inverseWidth = 1.0f / static_cast<float>(width);
 	float inverseHeight = 1.0f / static_cast<float>(height);
 
 	Image* fontImage = assetManager->createImage();
-	fontImage->width = static_cast<uint32_t>(width);
-	fontImage->height = static_cast<uint32_t>(height);
+	fontImage->width = width;
+	fontImage->height = height;
 	fontImage->format = ImageFormat::R8;
 	fontImage->colorSpace = ImageColorSpace::Linear;
 	fontImage->data.resize(width * height);
 
 	font.image = fontImage;
 	font.imageSamplerFilter = ImageSamplerFilter::Linear;
-	float xpos = 0.0f;
-	int xoff = 1;
+
+	x = 1;
+	y = 1;
+	yBottom = 1;
 	for (int codepoint = firstCharacter; codepoint < lastCharacter; codepoint++) {
 		int x0;
 		int y0;
@@ -615,26 +639,34 @@ void NtshEngn::AssetLoaderModule::loadFontTtf(const std::string& filePath, float
 		int y1;
 		stbtt_GetCodepointBitmapBox(&fontInfo, codepoint, scale, scale, &x0, &y0, &x1, &y1);
 
-		int gw = x1 - x0;
-		int gh = y1 - y0;
-		stbtt_MakeCodepointBitmap(&fontInfo, fontImage->data.data() + (xoff + width), gw, gh, width, scale, scale, codepoint);
+		uint32_t glyphWidth = x1 - x0;
+		uint32_t glyphHeight = y1 - y0;
+
+		if ((x + glyphWidth + 1) >= width) {
+			x = 1;
+			y = yBottom;
+		}
+
+		stbtt_MakeCodepointBitmap(&fontInfo, fontImage->data.data() + (x + (y * width)), glyphWidth, glyphHeight, width, scale, scale, codepoint);
 
 		int advanceWidth;
 		stbtt_GetCodepointHMetrics(&fontInfo, codepoint, &advanceWidth, nullptr);
 
-		float xadvance = scale * static_cast<float>(advanceWidth);
-		xpos += xadvance;
+		float xAdvance = scale * static_cast<float>(advanceWidth);
 
 		FontGlyph glyph;
 		glyph.positionTopLeft = { static_cast<float>(x0), static_cast<float>(y0) };
 		glyph.positionBottomRight = { static_cast<float>(x1), static_cast<float>(y1) };
-		glyph.positionAdvance = xadvance;
-		glyph.uvTopLeft = { static_cast<float>(xoff) * inverseWidth, inverseHeight };
-		glyph.uvBottomRight = { static_cast<float>(xoff + gw) * inverseWidth, static_cast<float>(1 + gh) * inverseHeight };
+		glyph.positionAdvance = xAdvance;
+		glyph.uvTopLeft = { static_cast<float>(x) * inverseWidth, static_cast<float>(y) * inverseHeight };
+		glyph.uvBottomRight = { static_cast<float>(x + glyphWidth) * inverseWidth, static_cast<float>(y + glyphHeight) * inverseHeight };
 		
-		font.glyphs[static_cast<char>(codepoint)] = glyph;
+		font.glyphs[static_cast<wchar_t>(codepoint)] = glyph;
 
-		xoff += gw + 1;
+		x += glyphWidth + 1;
+		if ((y + glyphHeight + 1) > yBottom) {
+			yBottom = y + glyphHeight + 1;
+		}
 	}
 }
 
