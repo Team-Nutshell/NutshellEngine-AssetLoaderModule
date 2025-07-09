@@ -21,8 +21,10 @@ namespace NtshEngn {
 		Model loadModel(const std::string& filePath);
 		// Loads the material in file at path filePath
 		Material loadMaterial(const std::string& filePath);
-		// Loads the font in file at path filePath
-		Font loadFont(const std::string& filePath, float fontHeight);
+		// Loads the bitmap font in file at path filePath
+		Font loadFontBitmap(const std::string& filePath, float fontHeight);
+		// Loads the SDF font in file at path filePath
+		Font loadFontSDF(const std::string& filePath);
 
 	private:
 		void loadSoundWav(const std::string& filePath, Sound& sound);
@@ -35,7 +37,8 @@ namespace NtshEngn {
 
 		std::unordered_map<std::string, Material> loadMaterialMtl(const std::string& filePath);
 
-		void loadFontTtf(const std::string& filePath, float fontHeight, Font& font);
+		void loadFontBitmapTtf(const std::string& filePath, float fontHeight, Font& font);
+		void loadFontSDFTtf(const std::string& filePath, Font& font);
 
 		void loadModelGltf(const std::string& filePath, Model& model);
 		void loadGltfNode(const std::string& filePath, Model& model, cgltf_node* node, Bimap<uint32_t, cgltf_node*>& jointNodes);

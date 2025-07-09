@@ -48,7 +48,7 @@ endif()
 list(APPEND NTSHENGN_DEFINES NTSHENGN_CURRENT_MODULE_ASSET_LOADER)
 
 set(MODULE_SOURCES
-	src/ntshengn_asset_loader_module.cpp)	
+	src/ntshengn_asset_loader_module.cpp)
 set(MODULE_HEADERS
 	src/ntshengn_asset_loader_module.h)
 

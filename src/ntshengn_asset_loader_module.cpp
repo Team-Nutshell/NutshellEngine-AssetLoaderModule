@@ -16,6 +16,8 @@
 #if defined(NTSHENGN_COMPILER_GCC)
 #pragma GCC diagnostic pop
 #endif
+#define STB_RECT_PACK_IMPLEMENTATION
+#include "../external/stb/stb_rect_pack.h"
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "../external/stb/stb_truetype.h"
 #if defined(NTSHENGN_COMPILER_MSVC)
@@ -99,13 +101,28 @@ NtshEngn::Material NtshEngn::AssetLoaderModule::loadMaterial(const std::string& 
 	return newMaterial;
 }
 
-NtshEngn::Font NtshEngn::AssetLoaderModule::loadFont(const std::string& filePath, float fontHeight) {
+NtshEngn::Font NtshEngn::AssetLoaderModule::loadFontBitmap(const std::string& filePath, float fontHeight) {
 	Font newFont;
 
 	std::string extension = File::extension(filePath);
 	if (extension == "ttf" ||
 		extension == "ttc") {
-		loadFontTtf(filePath, fontHeight, newFont);
+		loadFontBitmapTtf(filePath, fontHeight, newFont);
+	}
+	else {
+		NTSHENGN_MODULE_WARNING("Font file extension \"." + extension + "\" not supported.");
+	}
+
+	return newFont;
+}
+
+NtshEngn::Font NtshEngn::AssetLoaderModule::loadFontSDF(const std::string& filePath) {
+	Font newFont;
+
+	std::string extension = File::extension(filePath);
+	if (extension == "ttf" ||
+		extension == "ttc") {
+		loadFontSDFTtf(filePath, newFont);
 	}
 	else {
 		NTSHENGN_MODULE_WARNING("Font file extension \"." + extension + "\" not supported.");
@@ -580,7 +597,7 @@ std::unordered_map<std::string, NtshEngn::Material> NtshEngn::AssetLoaderModule:
 	return mtlMaterials;
 }
 
-void NtshEngn::AssetLoaderModule::loadFontTtf(const std::string& filePath, float fontHeight, Font& font) {
+void NtshEngn::AssetLoaderModule::loadFontBitmapTtf(const std::string& filePath, float fontHeight, Font& font) {
 	stbtt_fontinfo fontInfo;
 
 	std::string fileContent = File::readBinary(filePath);
@@ -631,7 +648,7 @@ void NtshEngn::AssetLoaderModule::loadFontTtf(const std::string& filePath, float
 	float inverseWidth = 1.0f / static_cast<float>(width);
 	float inverseHeight = 1.0f / static_cast<float>(height);
 
-	Image* fontImage = assetManager->createImage(File::filename(filePath) + " Bitmap");
+	Image* fontImage = assetManager->createImage(File::filename(filePath) + " Bitmap " + std::to_string(fontHeight));
 	fontImage->width = width;
 	fontImage->height = height;
 	fontImage->format = ImageFormat::R8;
@@ -678,6 +695,125 @@ void NtshEngn::AssetLoaderModule::loadFontTtf(const std::string& filePath, float
 		x += glyphWidth + 1;
 		if ((y + glyphHeight + 1) > yBottom) {
 			yBottom = y + glyphHeight + 1;
+		}
+	}
+}
+
+void NtshEngn::AssetLoaderModule::loadFontSDFTtf(const std::string& filePath, Font& font) {
+	stbtt_fontinfo fontInfo;
+
+	std::string fileContent = File::readBinary(filePath);
+
+	int fontOffset = stbtt_GetFontOffsetForIndex(reinterpret_cast<const unsigned char*>(fileContent.c_str()), 0);
+	stbtt_InitFont(&fontInfo, reinterpret_cast<const unsigned char*>(fileContent.c_str()), fontOffset);
+	float scale = stbtt_ScaleForPixelHeight(&fontInfo, 64.0f);
+
+	int firstCharacter = fontInfo.fontstart;
+	int lastCharacter = firstCharacter + fontInfo.numGlyphs;
+
+	int ascent;
+	int descent;
+	stbtt_GetFontVMetrics(&fontInfo, &ascent, &descent, nullptr);
+
+	uint32_t width = 1024;
+
+	uint32_t x = 1;
+	uint32_t y = 1;
+	uint32_t yBottom = 1;
+	for (int codepoint = firstCharacter; codepoint < lastCharacter; codepoint++) {
+		int x0;
+		int y0;
+		int x1;
+		int y1;
+		stbtt_GetCodepointBitmapBox(&fontInfo, codepoint, scale, scale, &x0, &y0, &x1, &y1);
+
+		uint32_t glyphWidth = x1 - x0;
+		uint32_t glyphHeight = y1 - y0;
+
+		if ((x + glyphWidth + 1) >= width) {
+			x = 1;
+			y = yBottom;
+		}
+
+		if ((glyphWidth + 1) >= width) {
+			width = glyphWidth + 1;
+		}
+
+		x += glyphWidth + 1;
+		if ((y + glyphHeight + 1) > yBottom) {
+			yBottom = y + glyphHeight + 1;
+		}
+	}
+
+	uint32_t height = yBottom;
+
+	float inverseWidth = 1.0f / static_cast<float>(width);
+	float inverseHeight = 1.0f / static_cast<float>(height);
+
+	Image* fontImage = assetManager->createImage(File::filename(filePath) + " SDF");
+	fontImage->width = width;
+	fontImage->height = height;
+	fontImage->format = ImageFormat::R8;
+	fontImage->colorSpace = ImageColorSpace::Linear;
+	fontImage->data.resize(width * height);
+
+	font.image = fontImage;
+	font.imageSamplerFilter = ImageSamplerFilter::Linear;
+	
+	std::vector<stbrp_node> nodes(fontInfo.numGlyphs);
+
+	stbrp_context rectPackContext;
+	stbrp_init_target(&rectPackContext, width, height, nodes.data(), fontInfo.numGlyphs);
+
+	std::vector<stbrp_rect> rects(fontInfo.numGlyphs);
+
+	std::vector<std::vector<uint8_t>> codepointSDFs(fontInfo.numGlyphs);
+
+	for (int codepoint = firstCharacter; codepoint < lastCharacter; codepoint++) {
+		int glyphWidth = 0;
+		int glyphHeight = 0;
+		int xoff = 0;
+		int yoff = 0;
+
+		uint8_t* codepointSDF = stbtt_GetCodepointSDF(&fontInfo, scale, codepoint, 1, 128, 32.0f, &glyphWidth, &glyphHeight, &xoff, &yoff);
+		if (codepointSDF) {
+			codepointSDFs[codepoint - firstCharacter] = std::vector<uint8_t>(codepointSDF, codepointSDF + (glyphWidth * glyphHeight));
+			stbtt_FreeSDF(codepointSDF, nullptr);
+		}
+		else {
+			codepointSDFs[codepoint] = std::vector<uint8_t>();
+		}
+
+		stbrp_rect rect;
+		rect.id = codepoint;
+		rect.w = glyphWidth;
+		rect.h = glyphHeight;
+		rects[codepoint - firstCharacter] = rect;
+
+		int advanceWidth;
+		stbtt_GetCodepointHMetrics(&fontInfo, codepoint, &advanceWidth, nullptr);
+
+		float xAdvance = scale * static_cast<float>(advanceWidth);
+
+		FontGlyph glyph;
+		glyph.positionTopLeft = { static_cast<float>(xoff), static_cast<float>(yoff) };
+		glyph.positionBottomRight = { static_cast<float>(xoff + glyphWidth), static_cast<float>(yoff + glyphHeight) };
+		glyph.positionAdvance = xAdvance;
+
+		font.glyphs[static_cast<wchar_t>(codepoint)] = glyph;
+	}
+
+	stbrp_pack_rects(&rectPackContext, rects.data(), fontInfo.numGlyphs);
+
+	for (stbrp_rect& rect : rects) {
+		FontGlyph& glyph = font.glyphs[static_cast<wchar_t>(rect.id)];
+		glyph.uvTopLeft = { static_cast<float>(rect.x) * inverseWidth, static_cast<float>(rect.y) * inverseHeight };
+		glyph.uvBottomRight = { static_cast<float>(rect.x + rect.w) * inverseWidth, static_cast<float>(rect.y + rect.h) * inverseHeight };
+
+		for (size_t i = 0; i < rect.h; i++) {
+			size_t offDst = ((rect.x + ((rect.y + i) * width)));
+			size_t offSrc = (i * rect.w);
+			memcpy(fontImage->data.data() + offDst, codepointSDFs[rect.id - firstCharacter].data() + offSrc, rect.w);
 		}
 	}
 }
