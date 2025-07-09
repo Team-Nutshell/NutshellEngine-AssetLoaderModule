@@ -32,9 +32,16 @@ NtshEngn::Material NtshEngn::AssetLoaderModule::loadMaterial(const std::string& 
 	return Material();
 }
 
-NtshEngn::Font NtshEngn::AssetLoaderModule::loadFont(const std::string& filePath, float fontHeight) {
+NtshEngn::Font NtshEngn::AssetLoaderModule::loadFontBitmap(const std::string& filePath, float fontHeight) {
 	NTSHENGN_UNUSED(filePath);
 	NTSHENGN_UNUSED(fontHeight);
+	NTSHENGN_MODULE_FUNCTION_NOT_IMPLEMENTED();
+
+	return Font();
+}
+
+NtshEngn::Font NtshEngn::AssetLoaderModule::loadFontSDF(const std::string& filePath) {
+	NTSHENGN_UNUSED(filePath);
 	NTSHENGN_MODULE_FUNCTION_NOT_IMPLEMENTED();
 
 	return Font();
