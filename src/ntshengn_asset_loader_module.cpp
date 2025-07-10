@@ -781,7 +781,7 @@ void NtshEngn::AssetLoaderModule::loadFontSDFTtf(const std::string& filePath, Fo
 			stbtt_FreeSDF(codepointSDF, nullptr);
 		}
 		else {
-			codepointSDFs[codepoint] = std::vector<uint8_t>();
+			codepointSDFs[codepoint - firstCharacter] = std::vector<uint8_t>();
 		}
 
 		stbrp_rect rect;
