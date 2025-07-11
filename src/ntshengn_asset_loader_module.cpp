@@ -715,6 +715,8 @@ void NtshEngn::AssetLoaderModule::loadFontSDFTtf(const std::string& filePath, Fo
 	int descent;
 	stbtt_GetFontVMetrics(&fontInfo, &ascent, &descent, nullptr);
 
+	int padding = 1;
+
 	uint32_t width = 1024;
 
 	uint32_t x = 1;
@@ -727,8 +729,8 @@ void NtshEngn::AssetLoaderModule::loadFontSDFTtf(const std::string& filePath, Fo
 		int y1;
 		stbtt_GetCodepointBitmapBox(&fontInfo, codepoint, scale, scale, &x0, &y0, &x1, &y1);
 
-		uint32_t glyphWidth = x1 - x0;
-		uint32_t glyphHeight = y1 - y0;
+		uint32_t glyphWidth = (x1 - x0) + (padding * 2);
+		uint32_t glyphHeight = (y1 - y0) + (padding * 2);
 
 		if ((x + glyphWidth + 1) >= width) {
 			x = 1;
@@ -760,10 +762,10 @@ void NtshEngn::AssetLoaderModule::loadFontSDFTtf(const std::string& filePath, Fo
 	font.image = fontImage;
 	font.imageSamplerFilter = ImageSamplerFilter::Linear;
 	
-	std::vector<stbrp_node> nodes(fontInfo.numGlyphs);
+	std::vector<stbrp_node> nodes(width);
 
 	stbrp_context rectPackContext;
-	stbrp_init_target(&rectPackContext, width, height, nodes.data(), fontInfo.numGlyphs);
+	stbrp_init_target(&rectPackContext, width, height, nodes.data(), width);
 
 	std::vector<stbrp_rect> rects(fontInfo.numGlyphs);
 
@@ -775,7 +777,7 @@ void NtshEngn::AssetLoaderModule::loadFontSDFTtf(const std::string& filePath, Fo
 		int xoff = 0;
 		int yoff = 0;
 
-		uint8_t* codepointSDF = stbtt_GetCodepointSDF(&fontInfo, scale, codepoint, 1, 128, 32.0f, &glyphWidth, &glyphHeight, &xoff, &yoff);
+		uint8_t* codepointSDF = stbtt_GetCodepointSDF(&fontInfo, scale, codepoint, padding, 128, 32.0f, &glyphWidth, &glyphHeight, &xoff, &yoff);
 		if (codepointSDF) {
 			codepointSDFs[codepoint - firstCharacter] = std::vector<uint8_t>(codepointSDF, codepointSDF + (glyphWidth * glyphHeight));
 			stbtt_FreeSDF(codepointSDF, nullptr);
