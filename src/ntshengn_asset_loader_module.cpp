@@ -810,9 +810,9 @@ void NtshEngn::AssetLoaderModule::loadFontSDFTtf(const std::string& filePath, Fo
 		glyph.uvTopLeft = { static_cast<float>(rect.x) * inverseWidth, static_cast<float>(rect.y) * inverseHeight };
 		glyph.uvBottomRight = { static_cast<float>(rect.x + rect.w) * inverseWidth, static_cast<float>(rect.y + rect.h) * inverseHeight };
 
-		for (size_t i = 0; i < rect.h; i++) {
-			size_t offDst = ((rect.x + ((rect.y + i) * width)));
-			size_t offSrc = (i * rect.w);
+		for (int i = 0; i < rect.h; i++) {
+			size_t offDst = static_cast<size_t>((rect.x + ((rect.y + i) * width)));
+			size_t offSrc = static_cast<size_t>(i * rect.w);
 			memcpy(fontImage->data.data() + offDst, codepointSDFs[rect.id - firstCharacter].data() + offSrc, rect.w);
 		}
 	}
