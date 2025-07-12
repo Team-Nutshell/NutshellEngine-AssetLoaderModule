@@ -1095,10 +1095,9 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 					cgltf_float* baseColorFactor = pbrMetallicRoughness.base_color_factor;
 					if (baseColorTexture != NULL) {
 						cgltf_image* baseColorImage = baseColorTexture->image;
+						Image* image = nullptr;
 						if (baseColorImage->uri) {
 							std::string imageURI = baseColorImage->uri;
-
-							Image* image = nullptr;
 
 							size_t base64Pos = imageURI.find(";base64,");
 							if (base64Pos != std::string::npos) {
@@ -1128,6 +1127,25 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 							}
 
 							primitive.material.diffuseTexture.image = image;
+						}
+						else if (baseColorImage->buffer_view) {
+							cgltf_buffer_view* bufferView = baseColorImage->buffer_view;
+							std::byte* buffer = static_cast<std::byte*>(bufferView->buffer->data) + bufferView->offset;
+							std::string imageName = filePath + ":" + std::to_string(model.primitives.size()) + ":diffuse";
+							if (bufferView->name) {
+								imageName = filePath + ":" + std::to_string(model.primitives.size()) + std::string(bufferView->name) + ":diffuse";
+							}
+							image = assetManager->findImageByName(imageName);
+							if (!image) {
+								image = assetManager->createImage(imageName);
+								loadImageFromMemory(buffer, bufferView->size, *image);
+								image->colorSpace = ImageColorSpace::SRGB;
+							}
+
+							primitive.material.diffuseTexture.image = image;
+						}
+
+						if (image) {
 							if (baseColorTexture->sampler != NULL) {
 								primitive.material.diffuseTexture.imageSampler.magFilter = m_gltfFilterToImageSamplerFilter[baseColorTexture->sampler->mag_filter];
 								primitive.material.diffuseTexture.imageSampler.minFilter = m_gltfFilterToImageSamplerFilter[baseColorTexture->sampler->min_filter];
@@ -1171,10 +1189,9 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 					cgltf_float roughnessFactor = pbrMetallicRoughness.roughness_factor;
 					if (metallicRoughnessTexture != NULL) {
 						cgltf_image* metallicRoughnessImage = metallicRoughnessTexture->image;
+						Image* image = nullptr;
 						if (metallicRoughnessImage->uri) {
 							std::string imageURI = metallicRoughnessImage->uri;
-
-							Image* image = nullptr;
 
 							size_t base64Pos = imageURI.find(";base64,");
 							if (base64Pos != std::string::npos) {
@@ -1202,7 +1219,26 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 									image->colorSpace = ImageColorSpace::Linear;
 								}
 							}
+						}
+						else if (metallicRoughnessImage->buffer_view) {
+							cgltf_buffer_view* bufferView = metallicRoughnessImage->buffer_view;
+							std::byte* buffer = static_cast<std::byte*>(bufferView->buffer->data) + bufferView->offset;
+							std::string imageName = filePath + ":" + std::to_string(model.primitives.size()) + ":metallicRoughness";
+							if (bufferView->name) {
+								imageName = filePath + ":" + std::to_string(model.primitives.size()) + std::string(bufferView->name) + ":metallicRoughness";
+							}
+							image = assetManager->findImageByName(imageName);
+							if (!image) {
+								image = assetManager->createImage(imageName);
+								loadImageFromMemory(buffer, bufferView->size, *image);
+								image->colorSpace = ImageColorSpace::Linear;
+							}
 
+							primitive.material.metalnessTexture.image = image;
+							primitive.material.roughnessTexture.image = primitive.material.metalnessTexture.image;
+						}
+
+						if (image) {
 							primitive.material.metalnessTexture.image = image;
 							primitive.material.roughnessTexture.image = primitive.material.metalnessTexture.image;
 							if (metallicRoughnessTexture->sampler != NULL) {
@@ -1250,10 +1286,9 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 				cgltf_texture* normalTexture = normalTextureView.texture;
 				if (normalTexture != NULL) {
 					cgltf_image* normalImage = normalTexture->image;
+					Image* image = nullptr;
 					if (normalImage->uri) {
 						std::string imageURI = normalImage->uri;
-
-						Image* image = nullptr;
 
 						size_t base64Pos = imageURI.find(";base64,");
 						if (base64Pos != std::string::npos) {
@@ -1283,6 +1318,25 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 						}
 
 						primitive.material.normalTexture.image = image;
+					}
+					else if (normalImage->buffer_view) {
+						cgltf_buffer_view* bufferView = normalImage->buffer_view;
+						std::byte* buffer = static_cast<std::byte*>(bufferView->buffer->data) + bufferView->offset;
+						std::string imageName = filePath + ":" + std::to_string(model.primitives.size()) + ":normal";
+						if (bufferView->name) {
+							imageName = filePath + ":" + std::to_string(model.primitives.size()) + std::string(bufferView->name) + ":normal";
+						}
+						image = assetManager->findImageByName(imageName);
+						if (!image) {
+							image = assetManager->createImage(imageName);
+							loadImageFromMemory(buffer, bufferView->size, *image);
+							image->colorSpace = ImageColorSpace::SRGB;
+						}
+
+						primitive.material.normalTexture.image = image;
+					}
+
+					if (image) {
 						if (normalTexture->sampler != NULL) {
 							primitive.material.normalTexture.imageSampler.magFilter = m_gltfFilterToImageSamplerFilter[normalTexture->sampler->mag_filter];
 							primitive.material.normalTexture.imageSampler.minFilter = m_gltfFilterToImageSamplerFilter[normalTexture->sampler->min_filter];
@@ -1305,10 +1359,9 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 				cgltf_float* emissiveFactor = primitiveMaterial->emissive_factor;
 				if (emissiveTexture != NULL) {
 					cgltf_image* emissiveImage = emissiveTexture->image;
+					Image* image = nullptr;
 					if (emissiveImage->uri) {
 						std::string imageURI = emissiveImage->uri;
-
-						Image* image = nullptr;
 
 						size_t base64Pos = imageURI.find(";base64,");
 						if (base64Pos != std::string::npos) {
@@ -1338,6 +1391,25 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 						}
 
 						primitive.material.emissiveTexture.image = image;
+					}
+					else if (emissiveImage->buffer_view) {
+						cgltf_buffer_view* bufferView = emissiveImage->buffer_view;
+						std::byte* buffer = static_cast<std::byte*>(bufferView->buffer->data) + bufferView->offset;
+						std::string imageName = filePath + ":" + std::to_string(model.primitives.size()) + ":emissive";
+						if (bufferView->name) {
+							imageName = filePath + ":" + std::to_string(model.primitives.size()) + std::string(bufferView->name) + ":emissive";
+						}
+						image = assetManager->findImageByName(imageName);
+						if (!image) {
+							image = assetManager->createImage(imageName);
+							loadImageFromMemory(buffer, bufferView->size, *image);
+							image->colorSpace = ImageColorSpace::SRGB;
+						}
+
+						primitive.material.normalTexture.image = image;
+					}
+
+					if (image) {
 						if (emissiveTexture->sampler != NULL) {
 							primitive.material.emissiveTexture.imageSampler.magFilter = m_gltfFilterToImageSamplerFilter[emissiveTexture->sampler->mag_filter];
 							primitive.material.emissiveTexture.imageSampler.minFilter = m_gltfFilterToImageSamplerFilter[emissiveTexture->sampler->min_filter];
@@ -1382,10 +1454,9 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 				cgltf_texture* occlusionTexture = occlusionTextureView.texture;
 				if (occlusionTexture != NULL) {
 					cgltf_image* occlusionImage = occlusionTexture->image;
+					Image* image = nullptr;
 					if (occlusionImage->uri) {
 						std::string imageURI = occlusionImage->uri;
-
-						Image* image = nullptr;
 
 						size_t base64Pos = imageURI.find(";base64,");
 						if (base64Pos != std::string::npos) {
@@ -1415,6 +1486,25 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 						}
 
 						primitive.material.occlusionTexture.image = image;
+					}
+					else if (occlusionImage->buffer_view) {
+						cgltf_buffer_view* bufferView = occlusionImage->buffer_view;
+						std::byte* buffer = static_cast<std::byte*>(bufferView->buffer->data) + bufferView->offset;
+						std::string imageName = filePath + ":" + std::to_string(model.primitives.size()) + ":occlusion";
+						if (bufferView->name) {
+							imageName = filePath + ":" + std::to_string(model.primitives.size()) + std::string(bufferView->name) + ":occlusion";
+						}
+						image = assetManager->findImageByName(imageName);
+						if (!image) {
+							image = assetManager->createImage(imageName);
+							loadImageFromMemory(buffer, bufferView->size, *image);
+							image->colorSpace = ImageColorSpace::Linear;
+						}
+
+						primitive.material.normalTexture.image = image;
+					}
+
+					if (image) {
 						if (occlusionTexture->sampler != NULL) {
 							primitive.material.occlusionTexture.imageSampler.magFilter = m_gltfFilterToImageSamplerFilter[occlusionTexture->sampler->mag_filter];
 							primitive.material.occlusionTexture.imageSampler.minFilter = m_gltfFilterToImageSamplerFilter[occlusionTexture->sampler->min_filter];
