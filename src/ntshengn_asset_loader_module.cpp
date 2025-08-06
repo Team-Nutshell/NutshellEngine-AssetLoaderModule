@@ -4,6 +4,19 @@
 #include "../Common/utils/ntshengn_defines.h"
 #include "../Common/utils/ntshengn_enums.h"
 
+void NtshEngn::AssetLoaderModule::init() {
+	NTSHENGN_MODULE_FUNCTION_NOT_IMPLEMENTED();
+}
+
+void NtshEngn::AssetLoaderModule::update(float dt) {
+	NTSHENGN_UNUSED(dt);
+	NTSHENGN_MODULE_FUNCTION_NOT_IMPLEMENTED();
+}
+
+void NtshEngn::AssetLoaderModule::destroy() {
+	NTSHENGN_MODULE_FUNCTION_NOT_IMPLEMENTED();
+}
+
 NtshEngn::Sound NtshEngn::AssetLoaderModule::loadSound(const std::string& filePath) {
 	NTSHENGN_UNUSED(filePath);
 	NTSHENGN_MODULE_FUNCTION_NOT_IMPLEMENTED();
