@@ -38,6 +38,18 @@
 #include <algorithm>
 #include <numeric>
 
+void NtshEngn::AssetLoaderModule::init() {
+
+}
+
+void NtshEngn::AssetLoaderModule::update(float dt) {
+	NTSHENGN_UNUSED(dt);
+}
+
+void NtshEngn::AssetLoaderModule::destroy() {
+
+}
+
 NtshEngn::Sound NtshEngn::AssetLoaderModule::loadSound(const std::string& filePath) {
 	Sound newSound;
 

@@ -13,6 +13,10 @@ namespace NtshEngn {
 	public:
 		AssetLoaderModule() : AssetLoaderModuleInterface("NutshellEngine Multi Asset Loader Module") {}
 
+		void init();
+		void update(float dt);
+		void destroy();
+
 		// Loads the sound in file at path filePath
 		Sound loadSound(const std::string& filePath);
 		// Loads the image in file at path filePath
