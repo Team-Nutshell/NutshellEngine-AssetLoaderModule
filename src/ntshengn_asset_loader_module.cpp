@@ -252,7 +252,6 @@ void NtshEngn::AssetLoaderModule::loadSoundWav(const std::string& filePath, Soun
 		return;
 	}
 	memcpy(&tmp, buffer, 4);
-	sound.size = static_cast<size_t>(tmp);
 
 	if (file.eof()) {
 		NTSHENGN_MODULE_WARNING("File \"" + filePath + "\" is not a valid WAVE sound file (data missing).");
@@ -264,8 +263,8 @@ void NtshEngn::AssetLoaderModule::loadSoundWav(const std::string& filePath, Soun
 	}
 
 	// Data
-	data.resize(sound.size);
-	file.read(&data[0], sound.size);
+	data.resize(static_cast<size_t>(tmp));
+	file.read(&data[0], data.size());
 	sound.data.insert(sound.data.end(), std::make_move_iterator(data.begin()), std::make_move_iterator(data.end()));
 	data.erase(data.begin(), data.end());
 
@@ -283,10 +282,12 @@ void NtshEngn::AssetLoaderModule::loadSoundOgg(const std::string& filePath, Soun
 	}
 
 	sound.channels = static_cast<uint8_t>(channels);
-	sound.size = static_cast<size_t>(size) * sound.channels * (sizeof(int16_t) / sizeof(uint8_t));
+	uint64_t dataSize = static_cast<size_t>(size) * sound.channels * (sizeof(int16_t) / sizeof(uint8_t));
 	sound.bitsPerSample = 16;
-	sound.data.resize(sound.size);
-	memcpy(sound.data.data(), reinterpret_cast<uint8_t*>(data), sound.size);
+	sound.data.resize(dataSize);
+	memcpy(sound.data.data(), reinterpret_cast<uint8_t*>(data), dataSize);
+
+	free(data);
 }
 
 void NtshEngn::AssetLoaderModule::loadImageStb(const std::string& filePath, Image& image) {
