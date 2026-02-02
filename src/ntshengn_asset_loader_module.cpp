@@ -453,13 +453,13 @@ void NtshEngn::AssetLoaderModule::loadModelObj(const std::string& filePath, Mode
 						}
 						// UV index
 						else if (j == 1) {
-							hasUvs = true;
 							vertex.uv = uvs[static_cast<size_t>(std::atoi(valueIndices[j].c_str())) - 1];
+							hasUvs = true;
 						}
 						// Normal index
 						else if (j == 2) {
-							hasNormals = true;
 							vertex.normal = normals[static_cast<size_t>(std::atoi(valueIndices[j].c_str())) - 1];
+							hasNormals = true;
 						}
 					}
 				}
