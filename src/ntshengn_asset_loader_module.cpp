@@ -611,6 +611,8 @@ std::unordered_map<std::string, NtshEngn::Material> NtshEngn::AssetLoaderModule:
 }
 
 void NtshEngn::AssetLoaderModule::loadFontBitmapTtf(const std::string& filePath, float fontHeight, Font& font) {
+	font.height = fontHeight;
+
 	stbtt_fontinfo fontInfo;
 
 	std::string fileContent = File::readBinary(filePath);
@@ -713,6 +715,8 @@ void NtshEngn::AssetLoaderModule::loadFontBitmapTtf(const std::string& filePath,
 }
 
 void NtshEngn::AssetLoaderModule::loadFontSDFTtf(const std::string& filePath, Font& font) {
+	font.height = 64.0f;
+
 	stbtt_fontinfo fontInfo;
 
 	std::string fileContent = File::readBinary(filePath);
