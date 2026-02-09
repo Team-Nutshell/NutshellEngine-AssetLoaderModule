@@ -1733,7 +1733,7 @@ void NtshEngn::AssetLoaderModule::loadGltfAnimation(Model& model, cgltf_animatio
 			}
 		}
 		else {
-			if (channel.keyframes.back().timestamp) {
+			if (!channel.keyframes.empty()) {
 				animation.duration = channel.keyframes.back().timestamp;
 			}
 		}
