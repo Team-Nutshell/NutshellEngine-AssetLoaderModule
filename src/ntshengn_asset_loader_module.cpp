@@ -268,6 +268,8 @@ void NtshEngn::AssetLoaderModule::loadSoundWav(const std::string& filePath, Soun
 	sound.data.insert(sound.data.end(), std::make_move_iterator(data.begin()), std::make_move_iterator(data.end()));
 	data.erase(data.begin(), data.end());
 
+	sound.length = static_cast<float>(sound.data.size()) / static_cast<float>(sound.sampleRate * sound.channels * (sound.bitsPerSample / 8));
+
 	file.close();
 }
 
@@ -286,6 +288,7 @@ void NtshEngn::AssetLoaderModule::loadSoundOgg(const std::string& filePath, Soun
 	sound.bitsPerSample = 16;
 	sound.data.resize(dataSize);
 	memcpy(sound.data.data(), reinterpret_cast<uint8_t*>(data), dataSize);
+	sound.length = static_cast<float>(sound.data.size()) / static_cast<float>(sound.sampleRate * sound.channels * (sound.bitsPerSample / 8));
 
 	free(data);
 }
