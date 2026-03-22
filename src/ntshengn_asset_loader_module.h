@@ -12,17 +12,17 @@ namespace NtshEngn {
 		void destroy();
 
 		// Loads the sound in file at path filePath
-		Sound loadSound(const std::string& filePath);
+		bool loadSound(const std::string& filePath, Sound& sound);
 		// Loads the image in file at path filePath
-		Image loadImage(const std::string& filePath);
+		bool loadImage(const std::string& filePath, Image& image);
 		// Loads the model in file at path filePath
-		Model loadModel(const std::string& filePath);
+		bool loadModel(const std::string& filePath, Model& model);
 		// Loads the material in file at path filePath
-		Material loadMaterial(const std::string& filePath);
+		bool loadMaterial(const std::string& filePath, Material& material);
 		// Loads the bitmap font in file at path filePath
-		Font loadFontBitmap(const std::string& filePath, float fontHeight);
+		bool loadFontBitmap(const std::string& filePath, float fontHeight, Font& font);
 		// Loads the SDF font in file at path filePath
-		Font loadFontSDF(const std::string& filePath);
+		bool loadFontSDF(const std::string& filePath, Font& font);
 	};
 
 }

@@ -17,47 +17,53 @@ void NtshEngn::AssetLoaderModule::destroy() {
 	NTSHENGN_MODULE_FUNCTION_NOT_IMPLEMENTED();
 }
 
-NtshEngn::Sound NtshEngn::AssetLoaderModule::loadSound(const std::string& filePath) {
+bool NtshEngn::AssetLoaderModule::loadSound(const std::string& filePath, Sound& sound) {
 	NTSHENGN_UNUSED(filePath);
+	NTSHENGN_UNUSED(sound);
 	NTSHENGN_MODULE_FUNCTION_NOT_IMPLEMENTED();
 
-	return Sound();
+	return false;
 }
 
-NtshEngn::Image NtshEngn::AssetLoaderModule::loadImage(const std::string& filePath) {
+bool NtshEngn::AssetLoaderModule::loadImage(const std::string& filePath, Image& image) {
 	NTSHENGN_UNUSED(filePath);
+	NTSHENGN_UNUSED(image);
 	NTSHENGN_MODULE_FUNCTION_NOT_IMPLEMENTED();
 
-	return Image();
+	return false;
 }
 
-NtshEngn::Model NtshEngn::AssetLoaderModule::loadModel(const std::string& filePath) {
+bool NtshEngn::AssetLoaderModule::loadModel(const std::string& filePath, Model& model) {
 	NTSHENGN_UNUSED(filePath);
+	NTSHENGN_UNUSED(model);
 	NTSHENGN_MODULE_FUNCTION_NOT_IMPLEMENTED();
 
-	return Model();
+	return false;
 }
 
-NtshEngn::Material NtshEngn::AssetLoaderModule::loadMaterial(const std::string& filePath) {
+bool NtshEngn::AssetLoaderModule::loadMaterial(const std::string& filePath, Material& material) {
 	NTSHENGN_UNUSED(filePath);
+	NTSHENGN_UNUSED(material);
 	NTSHENGN_MODULE_FUNCTION_NOT_IMPLEMENTED();
 
-	return Material();
+	return false;
 }
 
-NtshEngn::Font NtshEngn::AssetLoaderModule::loadFontBitmap(const std::string& filePath, float fontHeight) {
+bool NtshEngn::AssetLoaderModule::loadFontBitmap(const std::string& filePath, float fontHeight, Font& font) {
 	NTSHENGN_UNUSED(filePath);
 	NTSHENGN_UNUSED(fontHeight);
+	NTSHENGN_UNUSED(font);
 	NTSHENGN_MODULE_FUNCTION_NOT_IMPLEMENTED();
 
-	return Font();
+	return false;
 }
 
-NtshEngn::Font NtshEngn::AssetLoaderModule::loadFontSDF(const std::string& filePath) {
+bool NtshEngn::AssetLoaderModule::loadFontSDF(const std::string& filePath, Font& font) {
 	NTSHENGN_UNUSED(filePath);
+	NTSHENGN_UNUSED(font);
 	NTSHENGN_MODULE_FUNCTION_NOT_IMPLEMENTED();
 
-	return Font();
+	return false;
 }
 
 extern "C" NTSHENGN_MODULE_API NtshEngn::AssetLoaderModuleInterface* createModule() {
