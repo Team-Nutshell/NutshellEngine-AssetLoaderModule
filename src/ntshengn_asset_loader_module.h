@@ -18,33 +18,33 @@ namespace NtshEngn {
 		void destroy();
 
 		// Loads the sound in file at path filePath
-		Sound loadSound(const std::string& filePath);
+		bool loadSound(const std::string& filePath, Sound& sound);
 		// Loads the image in file at path filePath
-		Image loadImage(const std::string& filePath);
+		bool loadImage(const std::string& filePath, Image& image);
 		// Loads the model in file at path filePath
-		Model loadModel(const std::string& filePath);
+		bool loadModel(const std::string& filePath, Model& model);
 		// Loads the material in file at path filePath
-		Material loadMaterial(const std::string& filePath);
+		bool loadMaterial(const std::string& filePath, Material& material);
 		// Loads the bitmap font in file at path filePath
-		Font loadFontBitmap(const std::string& filePath, float fontHeight);
+		bool loadFontBitmap(const std::string& filePath, float fontHeight, Font& font);
 		// Loads the SDF font in file at path filePath
-		Font loadFontSDF(const std::string& filePath);
+		bool loadFontSDF(const std::string& filePath, Font& font);
 
 	private:
-		void loadSoundWav(const std::string& filePath, Sound& sound);
-		void loadSoundOgg(const std::string& filePath, Sound& sound);
+		bool loadSoundWav(const std::string& filePath, Sound& sound);
+		bool loadSoundOgg(const std::string& filePath, Sound& sound);
 
-		void loadImageStb(const std::string& filePath, Image& image);
-		void loadImageFromMemory(void* data, size_t size, Image& image);
+		bool loadImageStb(const std::string& filePath, Image& image);
+		bool loadImageFromMemory(void* data, size_t size, Image& image);
 
-		void loadModelObj(const std::string& filePath, Model& model);
+		bool loadModelObj(const std::string& filePath, Model& model);
 
 		std::unordered_map<std::string, Material> loadMaterialMtl(const std::string& filePath);
 
-		void loadFontBitmapTtf(const std::string& filePath, float fontHeight, Font& font);
-		void loadFontSDFTtf(const std::string& filePath, Font& font);
+		bool loadFontBitmapTtf(const std::string& filePath, float fontHeight, Font& font);
+		bool loadFontSDFTtf(const std::string& filePath, Font& font);
 
-		void loadModelGltf(const std::string& filePath, Model& model);
+		bool loadModelGltf(const std::string& filePath, Model& model);
 		void loadGltfNode(const std::string& filePath, Model& model, cgltf_node* node, Bimap<uint32_t, cgltf_node*>& jointNodes);
 		void loadGltfAnimation(Model& model, cgltf_animation* node, Bimap<uint32_t, cgltf_node*>& jointNodes);
 

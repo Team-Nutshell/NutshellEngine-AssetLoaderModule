@@ -50,25 +50,25 @@ void NtshEngn::AssetLoaderModule::destroy() {
 
 }
 
-NtshEngn::Sound NtshEngn::AssetLoaderModule::loadSound(const std::string& filePath) {
-	Sound newSound;
+bool NtshEngn::AssetLoaderModule::loadSound(const std::string& filePath, Sound& sound) {
+	bool loaded = false;
 
 	std::string extension = File::extension(filePath);
 	if (extension == "wav") {
-		loadSoundWav(filePath, newSound);
+		loaded = loadSoundWav(filePath, sound);
 	}
 	else if (extension == "ogg") {
-		loadSoundOgg(filePath, newSound);
+		loaded = loadSoundOgg(filePath, sound);
 	}
 	else {
 		NTSHENGN_MODULE_WARNING("Sound file extension \"." + extension + "\" not supported.");
 	}
 
-	return newSound;
+	return loaded;
 }
 
-NtshEngn::Image NtshEngn::AssetLoaderModule::loadImage(const std::string& filePath) {
-	Image newImage;
+bool NtshEngn::AssetLoaderModule::loadImage(const std::string& filePath, Image& image) {
+	bool loaded = false;
 
 	std::string extension = File::extension(filePath);
 	if ((extension == "jpg") ||
@@ -77,73 +77,75 @@ NtshEngn::Image NtshEngn::AssetLoaderModule::loadImage(const std::string& filePa
 		(extension == "tga") ||
 		(extension == "bmp") ||
 		(extension == "gif")) {
-		loadImageStb(filePath, newImage);
+		loaded = loadImageStb(filePath, image);
 	}
 	else {
 		NTSHENGN_MODULE_WARNING("Image file extension \"." + extension + "\" not supported.");
 	}
 
-	return newImage;
+	return loaded;
 }
 
-NtshEngn::Model NtshEngn::AssetLoaderModule::loadModel(const std::string& filePath) {
-	Model newModel;
+bool NtshEngn::AssetLoaderModule::loadModel(const std::string& filePath, Model& model) {
+	bool loaded = false;
 
 	std::string extension = File::extension(filePath);
 	if (extension == "obj") {
-		loadModelObj(filePath, newModel);
+		loaded = loadModelObj(filePath, model);
 	}
 	else if ((extension == "gltf") ||
 		(extension == "glb")) {
-		loadModelGltf(filePath, newModel);
+		loaded = loadModelGltf(filePath, model);
 	}
 	else {
 		NTSHENGN_MODULE_WARNING("Model file extension \"." + extension + "\" not supported.");
 	}
 
-	return newModel;
+	return loaded;
 }
 
-NtshEngn::Material NtshEngn::AssetLoaderModule::loadMaterial(const std::string& filePath) {
-	Material newMaterial;
+bool NtshEngn::AssetLoaderModule::loadMaterial(const std::string& filePath, Material& material) {
+	NTSHENGN_UNUSED(material);
+
+	bool loaded = false;
 
 	std::string extension = File::extension(filePath);
 	NTSHENGN_MODULE_WARNING("Material file extension \"." + extension + "\" not supported.");
 
-	return newMaterial;
+	return loaded;
 }
 
-NtshEngn::Font NtshEngn::AssetLoaderModule::loadFontBitmap(const std::string& filePath, float fontHeight) {
-	Font newFont;
+bool NtshEngn::AssetLoaderModule::loadFontBitmap(const std::string& filePath, float fontHeight, Font& font) {
+	bool loaded = false;
 
 	std::string extension = File::extension(filePath);
 	if (extension == "ttf" ||
 		extension == "ttc") {
-		loadFontBitmapTtf(filePath, fontHeight, newFont);
+		loaded = loadFontBitmapTtf(filePath, fontHeight, font);
 	}
 	else {
 		NTSHENGN_MODULE_WARNING("Font file extension \"." + extension + "\" not supported.");
 	}
 
-	return newFont;
+	return loaded;
 }
 
-NtshEngn::Font NtshEngn::AssetLoaderModule::loadFontSDF(const std::string& filePath) {
-	Font newFont;
+bool NtshEngn::AssetLoaderModule::loadFontSDF(const std::string& filePath, Font& font) {
+	bool loaded = false;
 
 	std::string extension = File::extension(filePath);
 	if (extension == "ttf" ||
 		extension == "ttc") {
-		loadFontSDFTtf(filePath, newFont);
+		loaded = loadFontSDFTtf(filePath, font);
 	}
 	else {
 		NTSHENGN_MODULE_WARNING("Font file extension \"." + extension + "\" not supported.");
 	}
 
-	return newFont;
+	return loaded;
 }
 
-void NtshEngn::AssetLoaderModule::loadSoundWav(const std::string& filePath, Sound& sound) {
+bool NtshEngn::AssetLoaderModule::loadSoundWav(const std::string& filePath, Sound& sound) {
 	char buffer[4];
 	int64_t tmp = 0;
 	std::vector<char> data;
@@ -153,57 +155,67 @@ void NtshEngn::AssetLoaderModule::loadSoundWav(const std::string& filePath, Soun
 	// Open file
 	if (!file.is_open()) {
 		NTSHENGN_MODULE_WARNING("Could not open sound file \"" + filePath + "\".");
-		return;
+
+		return false;
 	}
 
 	// RIFF header
 	if (!file.read(buffer, 4)) {
 		NTSHENGN_MODULE_WARNING("Could not read \"RIFF\" for sound file \"" + filePath + "\".");
-		return;
+
+		return false;
 	}
 	if (strncmp(buffer, "RIFF", 4) != 0) {
 		NTSHENGN_MODULE_WARNING("File \"" + filePath + "\" is not a valid WAVE sound file (RIFF header missing).");
-		return;
+
+		return false;
 	}
 
 	// Size
 	if (!file.read(buffer, 4)) {
 		NTSHENGN_MODULE_WARNING("Could not read size for sound file \"" + filePath + "\".");
-		return;
+
+		return false;
 	}
 
 	// WAVE header
 	if (!file.read(buffer, 4)) {
 		NTSHENGN_MODULE_WARNING("Could not read \"WAVE\" for sound file \"" + filePath + "\".");
-		return;
+
+		return false;
 	}
 	if (strncmp(buffer, "WAVE", 4) != 0) {
 		NTSHENGN_MODULE_WARNING("File \"" + filePath + "\" is not a valid WAVE sound file (WAVE header missing).");
-		return;
+
+		return false;
 	}
 
 	// fmt/0
 	if (!file.read(buffer, 4)) {
 		NTSHENGN_MODULE_WARNING("Could not read fmt/0 for sound file \"" + filePath + "\".");
-		return;
+
+		return false;
 	}
 
 	// 16
 	if (!file.read(buffer, 4)) {
 		NTSHENGN_MODULE_WARNING("Could not read 16 for sound file \"" + filePath + "\".");
-		return;
+
+		return false;
 	}
 
 	// PCM
 	if (!file.read(buffer, 2)) {
 		NTSHENGN_MODULE_WARNING("Could not read PCM for sound file \"" + filePath + "\".");
-		return;
+
+		return false;
 	}
 
 	// Channels
 	if (!file.read(buffer, 2)) {
 		NTSHENGN_MODULE_WARNING("Could not read the number of channels for sound file \"" + filePath + "\".");
-		return;
+
+		return false;
 	}
 	memcpy(&tmp, buffer, 2);
 	sound.channels = static_cast<uint8_t>(tmp);
@@ -211,7 +223,8 @@ void NtshEngn::AssetLoaderModule::loadSoundWav(const std::string& filePath, Soun
 	// Sample rate
 	if (!file.read(buffer, 4)) {
 		NTSHENGN_MODULE_WARNING("Could not read sample rate for sound file \"" + filePath + "\".");
-		return;
+
+		return false;
 	}
 	memcpy(&tmp, buffer, 4);
 	sound.sampleRate = static_cast<int32_t>(tmp);
@@ -219,19 +232,22 @@ void NtshEngn::AssetLoaderModule::loadSoundWav(const std::string& filePath, Soun
 	// Byte rate ((sampleRate * bitsPerSample * channels) / 8)
 	if (!file.read(buffer, 4)) {
 		NTSHENGN_MODULE_WARNING("Could not read byte rate for sound file \"" + filePath + "\".");
-		return;
+
+		return false;
 	}
 
 	// Block align ((bitsPerSample * channels) / 8)
 	if (!file.read(buffer, 2)) {
 		NTSHENGN_MODULE_WARNING("Could not read block align for sound file \"" + filePath + "\".");
-		return;
+
+		return false;
 	}
 
 	// Bits per sample
 	if (!file.read(buffer, 2)) {
 		NTSHENGN_MODULE_WARNING("Could not read bits per sample for sound file \"" + filePath + "\".");
-		return;
+
+		return false;
 	}
 	memcpy(&tmp, buffer, 2);
 	sound.bitsPerSample = static_cast<uint8_t>(tmp);
@@ -239,27 +255,32 @@ void NtshEngn::AssetLoaderModule::loadSoundWav(const std::string& filePath, Soun
 	// data header
 	if (!file.read(buffer, 4)) {
 		NTSHENGN_MODULE_WARNING("Could not read \"data\" for sound file \"" + filePath + "\".");
-		return;
+
+		return false;
 	}
 	if (strncmp(buffer, "data", 4) != 0) {
 		NTSHENGN_MODULE_WARNING("File \"" + filePath + "\" is not a valid WAVE sound file (data header missing).");
-		return;
+
+		return false;
 	}
 
 	// Data size
 	if (!file.read(buffer, 4)) {
 		NTSHENGN_MODULE_WARNING("Could not read data size for sound file \"" + filePath + "\".");
-		return;
+
+		return false;
 	}
 	memcpy(&tmp, buffer, 4);
 
 	if (file.eof()) {
 		NTSHENGN_MODULE_WARNING("File \"" + filePath + "\" is not a valid WAVE sound file (data missing).");
-		return;
+
+		return false;
 	}
 	if (file.fail()) {
 		NTSHENGN_MODULE_WARNING("Unknown error while loading \"" + filePath + "\" WAVE sound file.");
-		return;
+
+		return false;
 	}
 
 	// Data
@@ -271,9 +292,11 @@ void NtshEngn::AssetLoaderModule::loadSoundWav(const std::string& filePath, Soun
 	sound.length = static_cast<float>(sound.data.size()) / static_cast<float>(sound.sampleRate * sound.channels * (sound.bitsPerSample / 8));
 
 	file.close();
+
+	return true;
 }
 
-void NtshEngn::AssetLoaderModule::loadSoundOgg(const std::string& filePath, Sound& sound) {
+bool NtshEngn::AssetLoaderModule::loadSoundOgg(const std::string& filePath, Sound& sound) {
 	int channels;
 	int size;
 	short* data;
@@ -281,6 +304,8 @@ void NtshEngn::AssetLoaderModule::loadSoundOgg(const std::string& filePath, Soun
 
 	if (size < 0) {
 		NTSHENGN_MODULE_WARNING("Unknown error when loading \"" + filePath + "\" Ogg Vorbis sound file.");
+
+		return false;
 	}
 
 	sound.channels = static_cast<uint8_t>(channels);
@@ -291,9 +316,11 @@ void NtshEngn::AssetLoaderModule::loadSoundOgg(const std::string& filePath, Soun
 	sound.length = static_cast<float>(sound.data.size()) / static_cast<float>(sound.sampleRate * sound.channels * (sound.bitsPerSample / 8));
 
 	free(data);
+
+	return true;
 }
 
-void NtshEngn::AssetLoaderModule::loadImageStb(const std::string& filePath, Image& image) {
+bool NtshEngn::AssetLoaderModule::loadImageStb(const std::string& filePath, Image& image) {
 	int width;
 	int height;
 	int texChannels;
@@ -301,7 +328,8 @@ void NtshEngn::AssetLoaderModule::loadImageStb(const std::string& filePath, Imag
 	stbi_uc* pixels = stbi_load(filePath.c_str(), &width, &height, &texChannels, STBI_rgb_alpha);
 	if (!pixels) {
 		NTSHENGN_MODULE_WARNING("Could not load image file \"" + filePath + "\".");
-		return;
+
+		return false;
 	}
 
 	image.width = static_cast<uint32_t>(width);
@@ -312,9 +340,11 @@ void NtshEngn::AssetLoaderModule::loadImageStb(const std::string& filePath, Imag
 	std::copy(pixels, pixels + (width * height * 4), image.data.begin());
 
 	stbi_image_free(pixels);
+
+	return true;
 }
 
-void NtshEngn::AssetLoaderModule::loadImageFromMemory(void* data, size_t size, Image& image) {
+bool NtshEngn::AssetLoaderModule::loadImageFromMemory(void* data, size_t size, Image& image) {
 	int width;
 	int height;
 	int texChannels;
@@ -322,7 +352,8 @@ void NtshEngn::AssetLoaderModule::loadImageFromMemory(void* data, size_t size, I
 	stbi_uc* pixels = stbi_load_from_memory(reinterpret_cast<stbi_uc*>(data), static_cast<int>(size), &width, &height, &texChannels, STBI_rgb_alpha);
 	if (!pixels) {
 		NTSHENGN_MODULE_WARNING("Could not load image from memory.");
-		return;
+
+		return true;
 	}
 
 	image.width = static_cast<uint32_t>(width);
@@ -333,15 +364,18 @@ void NtshEngn::AssetLoaderModule::loadImageFromMemory(void* data, size_t size, I
 	std::copy(pixels, pixels + (width * height * 4), image.data.begin());
 
 	stbi_image_free(pixels);
+
+	return true;
 }
 
-void NtshEngn::AssetLoaderModule::loadModelObj(const std::string& filePath, Model& model) {
+bool NtshEngn::AssetLoaderModule::loadModelObj(const std::string& filePath, Model& model) {
 	std::ifstream file(filePath);
 
 	// Open file
 	if (!file.is_open()) {
 		NTSHENGN_MODULE_WARNING("Could not open model file \"" + filePath + "\".");
-		return;
+
+		return false;
 	}
 
 	std::vector<Math::vec3> positions;
@@ -508,6 +542,8 @@ void NtshEngn::AssetLoaderModule::loadModelObj(const std::string& filePath, Mode
 	}
 
 	file.close();
+
+	return true;
 }
 
 std::unordered_map<std::string, NtshEngn::Material> NtshEngn::AssetLoaderModule::loadMaterialMtl(const std::string& filePath) {
@@ -518,6 +554,7 @@ std::unordered_map<std::string, NtshEngn::Material> NtshEngn::AssetLoaderModule:
 	// Open file
 	if (!file.is_open()) {
 		NTSHENGN_MODULE_WARNING("Could not open material file \"" + filePath + "\".");
+
 		return mtlMaterials;
 	}
 
@@ -613,7 +650,7 @@ std::unordered_map<std::string, NtshEngn::Material> NtshEngn::AssetLoaderModule:
 	return mtlMaterials;
 }
 
-void NtshEngn::AssetLoaderModule::loadFontBitmapTtf(const std::string& filePath, float fontHeight, Font& font) {
+bool NtshEngn::AssetLoaderModule::loadFontBitmapTtf(const std::string& filePath, float fontHeight, Font& font) {
 	font.height = fontHeight;
 
 	stbtt_fontinfo fontInfo;
@@ -715,9 +752,11 @@ void NtshEngn::AssetLoaderModule::loadFontBitmapTtf(const std::string& filePath,
 			yBottom = y + glyphHeight + 1;
 		}
 	}
+
+	return true;
 }
 
-void NtshEngn::AssetLoaderModule::loadFontSDFTtf(const std::string& filePath, Font& font) {
+bool NtshEngn::AssetLoaderModule::loadFontSDFTtf(const std::string& filePath, Font& font) {
 	font.height = 64.0f;
 
 	stbtt_fontinfo fontInfo;
@@ -838,9 +877,11 @@ void NtshEngn::AssetLoaderModule::loadFontSDFTtf(const std::string& filePath, Fo
 			memcpy(fontImage->data.data() + offDst, codepointSDFs[rect.id - firstCharacter].data() + offSrc, rect.w);
 		}
 	}
+
+	return true;
 }
 
-void NtshEngn::AssetLoaderModule::loadModelGltf(const std::string& filePath, Model& model) {
+bool NtshEngn::AssetLoaderModule::loadModelGltf(const std::string& filePath, Model& model) {
 	cgltf_options options = {};
 	cgltf_data* data = NULL;
 	cgltf_result result = cgltf_parse_file(&options, filePath.c_str(), &data);
@@ -849,7 +890,8 @@ void NtshEngn::AssetLoaderModule::loadModelGltf(const std::string& filePath, Mod
 
 		if (result != cgltf_result_success) {
 			NTSHENGN_MODULE_WARNING("Could not load buffers for model file \"" + filePath + "\".");
-			return;
+
+			return false;
 		}
 		else {
 			cgltf_scene* scene = data->scene;
@@ -869,7 +911,11 @@ void NtshEngn::AssetLoaderModule::loadModelGltf(const std::string& filePath, Mod
 	}
 	else {
 		NTSHENGN_MODULE_WARNING("Could not load model file \"" + filePath + "\".");
+
+		return false;
 	}
+
+	return true;
 }
 
 void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Model& model, cgltf_node* node, Bimap<uint32_t, cgltf_node*>& jointNodes) {
