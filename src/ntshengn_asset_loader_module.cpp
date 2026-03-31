@@ -976,6 +976,11 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 			size_t jointsStride = 0;
 			size_t weightsStride = 0;
 
+			cgltf_type colorType = cgltf_type_vec3;
+			cgltf_component_type colorComponentType = cgltf_component_type_r_32f;
+			size_t colorComponentSize = sizeof(float);
+			uint8_t colorCanalCount = 3;
+
 			for (size_t j = 0; j < nodeMeshPrimitive.attributes_count; j++) {
 				cgltf_attribute attribute = nodeMeshPrimitive.attributes[j];
 				std::string attributeName = std::string(attribute.name);
@@ -1002,7 +1007,25 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 				else if (attributeName == "COLOR_0") {
 					color = reinterpret_cast<float*>(bufferOffset);
 					colorCount = attribute.data->count;
-					colorStride = std::max(bufferView->stride, 3 * sizeof(float));
+					colorType = accessor->type;
+					colorComponentType = accessor->component_type;
+
+					if (colorComponentType == cgltf_component_type_r_32f) {
+						colorComponentSize = sizeof(float);
+					}
+					else if (colorComponentType == cgltf_component_type_r_8u) {
+						colorComponentSize = sizeof(uint8_t);
+					}
+					else if (colorComponentType == cgltf_component_type_r_16u) {
+						colorComponentSize = sizeof(uint16_t);
+					}
+					if (colorType == cgltf_type_vec3) {
+						colorCanalCount = 3;
+					}
+					else if (colorType == cgltf_type_vec4) {
+						colorCanalCount = 4;
+					}
+					colorStride = std::max(bufferView->stride, colorCanalCount * colorComponentSize);
 				}
 				else if (attributeName == "TANGENT") {
 					tangent = reinterpret_cast<float*>(bufferOffset);
@@ -1048,8 +1071,47 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 				vertex.uv = (uvCount != 0) ? Math::vec2(uv + uvCursor) : Math::vec2(0.5f, 0.5f);
 				uvCursor += (uvStride / sizeof(float));
 
-				vertex.color = (colorCount != 0) ? Math::vec3(color + colorCursor) : Math::vec3(0.0f, 0.0f, 0.0f);
-				colorCursor += (colorStride / sizeof(float));
+				if (colorCount != 0) {
+					if (colorComponentType == cgltf_component_type_r_32f) {
+						vertex.color.x = *(color + colorCursor);
+						vertex.color.y = *(color + colorCursor + 1);
+						vertex.color.z = *(color + colorCursor + 2);
+						if (colorCanalCount == 4) {
+							vertex.color.w = *(color + colorCursor + 3);
+						}
+						else {
+							vertex.color.w = 0.0f;
+						}
+					}
+					else if (colorComponentType == cgltf_component_type_r_8u) {
+						uint8_t* colorPtr = reinterpret_cast<uint8_t*>(color);
+						vertex.color.x = static_cast<float>(*(colorPtr + colorCursor)) / 255.0f;
+						vertex.color.y = static_cast<float>(*(colorPtr + colorCursor + 1)) / 255.0f;
+						vertex.color.z = static_cast<float>(*(colorPtr + colorCursor + 2)) / 255.0f;
+						if (colorCanalCount == 4) {
+							vertex.color.w = static_cast<float>(*(colorPtr + colorCursor + 3)) / 255.0f;
+						}
+						else {
+							vertex.color.w = 0.0f;
+						}
+					}
+					else if (colorComponentType == cgltf_component_type_r_16u) {
+						uint16_t* colorPtr = reinterpret_cast<uint16_t*>(color);
+						vertex.color.x = static_cast<float>(*(colorPtr + colorCursor)) / 65535.0f;
+						vertex.color.y = static_cast<float>(*(colorPtr + colorCursor + 1)) / 65535.0f;
+						vertex.color.z = static_cast<float>(*(colorPtr + colorCursor + 2)) / 65535.0f;
+						if (colorCanalCount == 4) {
+							vertex.color.w = static_cast<float>(*(colorPtr + colorCursor + 3)) / 65535.0f;
+						}
+						else {
+							vertex.color.w = 0.0f;
+						}
+					}
+					colorCursor += (colorStride / colorComponentSize);
+				}
+				else {
+					vertex.color = Math::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+				}
 
 				vertex.tangent = (tangentCount != 0) ? Math::vec4(tangent + tangentCursor) : Math::vec4(0.5f, 0.5f, 0.5f, 1.0f);
 				tangentCursor += (tangentStride / sizeof(float));
