@@ -956,8 +956,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 			float* uv = nullptr;
 			float* color = nullptr;
 			float* tangent = nullptr;
-			uint8_t* jointsu8 = nullptr;
-			uint16_t* jointsu16 = nullptr;
+			uint8_t* joints = nullptr;
 			float* weights = nullptr;
 
 			size_t positionCount = 0;
@@ -980,6 +979,9 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 			cgltf_component_type colorComponentType = cgltf_component_type_r_32f;
 			size_t colorComponentSize = sizeof(float);
 			uint8_t colorCanalCount = 3;
+
+			cgltf_component_type jointsComponentType = cgltf_component_type_r_8u;
+			size_t jointsComponentSize = sizeof(uint8_t);
 
 			for (size_t j = 0; j < nodeMeshPrimitive.attributes_count; j++) {
 				cgltf_attribute attribute = nodeMeshPrimitive.attributes[j];
@@ -1033,16 +1035,17 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 					tangentStride = std::max(bufferView->stride, 4 * sizeof(float));
 				}
 				else if (attributeName == "JOINTS_0") {
-					if (accessor->component_type == cgltf_component_type_r_8u) {
-						jointsu8 = reinterpret_cast<uint8_t*>(bufferOffset);
-						jointsCount = attribute.data->count;
-						jointsStride = std::max(bufferView->stride, 4 * sizeof(uint8_t));
+					joints = reinterpret_cast<uint8_t*>(bufferOffset);
+					jointsCount = attribute.data->count;
+					jointsComponentType = accessor->component_type;
+
+					if (jointsComponentType == cgltf_component_type_r_8u) {
+						jointsComponentSize = sizeof(uint8_t);
 					}
-					else {
-						jointsu16 = reinterpret_cast<uint16_t*>(bufferOffset);
-						jointsCount = attribute.data->count;
-						jointsStride = std::max(bufferView->stride, 4 * sizeof(uint16_t));
+					else if (jointsComponentType == cgltf_component_type_r_16u) {
+						jointsComponentSize = sizeof(uint16_t);
 					}
+					jointsStride = std::max(bufferView->stride, 4 * jointsComponentSize);
 				}
 				else if (attributeName == "WEIGHTS_0") {
 					weights = reinterpret_cast<float*>(bufferOffset);
@@ -1116,13 +1119,21 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 				vertex.tangent = (tangentCount != 0) ? Math::vec4(tangent + tangentCursor) : Math::vec4(0.5f, 0.5f, 0.5f, 1.0f);
 				tangentCursor += (tangentStride / sizeof(float));
 
-				if (jointsu8) {
-					vertex.joints = (jointsCount != 0) ? std::array<uint32_t, 4>({ static_cast<uint32_t>(jointsu8[jointsCursor]), static_cast<uint32_t>(jointsu8[jointsCursor + 1]), static_cast<uint32_t>(jointsu8[jointsCursor] + 2), static_cast<uint32_t>(jointsu8[jointsCursor + 3]) }) : std::array<uint32_t, 4>({ 0, 0, 0, 0 });
-					jointsCursor += (jointsStride / sizeof(uint8_t));
-				}
-				else {
-					vertex.joints = (jointsCount != 0) ? std::array<uint32_t, 4>({ static_cast<uint32_t>(jointsu16[jointsCursor]), static_cast<uint32_t>(jointsu16[jointsCursor + 1]), static_cast<uint32_t>(jointsu16[jointsCursor] + 2), static_cast<uint32_t>(jointsu16[jointsCursor + 3]) }) : std::array<uint32_t, 4>({ 0, 0, 0, 0 });
-					jointsCursor += (jointsStride / sizeof(uint16_t));
+				if (jointsCount != 0) {
+					if (jointsComponentType == cgltf_component_type_r_8u) {
+						vertex.joints[0] = static_cast<uint32_t>(*(joints + jointsCursor));
+						vertex.joints[1] = static_cast<uint32_t>(*(joints + jointsCursor + 1));
+						vertex.joints[2] = static_cast<uint32_t>(*(joints + jointsCursor + 2));
+						vertex.joints[3] = static_cast<uint32_t>(*(joints + jointsCursor + 3));
+					}
+					else if (jointsComponentType == cgltf_component_type_r_16u) {
+						uint16_t* jointsPtr = reinterpret_cast<uint16_t*>(joints);
+						vertex.joints[0] = static_cast<uint32_t>(*(jointsPtr + jointsCursor));
+						vertex.joints[1] = static_cast<uint32_t>(*(jointsPtr + jointsCursor + 1));
+						vertex.joints[2] = static_cast<uint32_t>(*(jointsPtr + jointsCursor + 2));
+						vertex.joints[3] = static_cast<uint32_t>(*(jointsPtr + jointsCursor + 3));
+					}
+					jointsCursor += (jointsStride / jointsComponentSize);
 				}
 
 				vertex.weights = (weightsCount != 0) ? Math::vec4(weights + weightsCursor) : Math::vec4(0.0f, 0.0f, 0.0f, 0.0f);
