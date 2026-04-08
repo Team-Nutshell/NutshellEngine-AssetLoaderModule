@@ -1688,7 +1688,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 		std::unordered_map<uint32_t, size_t> skinJoints;
 		for (size_t i = 0; i < nodeSkin->joints_count; i++) {
 			cgltf_node* nodeJoint = nodeSkin->joints[i];
-			if (!jointNodes.exist(nodeJoint)) {
+			if (!jointNodes.contains(nodeJoint)) {
 				jointNodes.insert_or_assign(static_cast<uint32_t>(jointNodes.size()), nodeJoint);
 			}
 			std::byte* bufferOffset = buffer + accessor->offset + bufferView->offset + (16 * sizeof(float) * i);
@@ -1773,7 +1773,7 @@ void NtshEngn::AssetLoaderModule::loadGltfAnimation(Model& model, cgltf_animatio
 		cgltf_node* animationTargetNode = animationChannel.target_node;
 
 		uint32_t jointIndex = 0;
-		if (jointNodes.exist(animationTargetNode)) {
+		if (jointNodes.contains(animationTargetNode)) {
 			jointIndex = jointNodes[animationTargetNode];
 		}
 		else {
