@@ -1714,22 +1714,19 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 			skin.joints.push_back(joint);
 
 			skinJoints[jointNodes[nodeJoint]] = skin.joints.size() - 1;
-
-			if (i == 0) {
-				skin.rootJoint = jointNodes[nodeJoint];
-			}
-		}
-		if (nodeSkin->skeleton) {
-			skin.rootJoint = jointNodes[nodeSkin->skeleton];
 		}
 
 		for (size_t i = 0; i < nodeSkin->joints_count; i++) {
+			if (!jointNodes[static_cast<uint32_t>(i)]->parent || !jointNodes.contains(jointNodes[static_cast<uint32_t>(i)]->parent)) {
+				skin.rootJoints.push_back(static_cast<uint32_t>(i));
+			}
+
 			for (size_t j = 0; j < jointNodes[static_cast<uint32_t>(i)]->children_count; j++) {
 				skin.joints[i].children.push_back(jointNodes[jointNodes[static_cast<uint32_t>(i)]->children[j]]);
 			}
 		}
 
-		cgltf_node* baseMatrixNode = jointNodes[skin.rootJoint]->parent;
+		cgltf_node* baseMatrixNode = jointNodes[skin.rootJoints[0]]->parent;
 		while (baseMatrixNode) {
 			Math::mat4 nodeMatrix = Math::mat4::identity();
 			if (baseMatrixNode->has_matrix) {
