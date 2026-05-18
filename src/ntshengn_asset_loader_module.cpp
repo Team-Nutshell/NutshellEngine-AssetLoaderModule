@@ -1,5 +1,6 @@
 #include "ntshengn_asset_loader_module.h"
 #include "../Common/asset_manager/ntshengn_asset_manager_interface.h"
+#include "../Common/modules/ntshengn_graphics_module_interface.h"
 #include "../Module/utils/ntshengn_module_defines.h"
 #include "../Module/utils/ntshengn_dynamic_library.h"
 #include "../Common/utils/ntshengn_defines.h"
@@ -601,7 +602,9 @@ std::unordered_map<std::string, NtshEngn::Material> NtshEngn::AssetLoaderModule:
 			}
 
 			if (currentMaterial) {
-				currentMaterial->diffuseTexture.image = image;
+				if (graphicsModule) {
+					currentMaterial->diffuseTexture.image = graphicsModule->load(*image);
+				}
 			}
 		}
 		else if (tokens[0] == "map_Kd") {
@@ -610,7 +613,9 @@ std::unordered_map<std::string, NtshEngn::Material> NtshEngn::AssetLoaderModule:
 				image->colorSpace = ImageColorSpace::SRGB;
 			}
 			if (currentMaterial) {
-				currentMaterial->diffuseTexture.image = image;
+				if (graphicsModule) {
+					currentMaterial->diffuseTexture.image = graphicsModule->load(*image);
+				}
 			}
 		}
 		else if (tokens[0] == "Ke") {
@@ -631,7 +636,9 @@ std::unordered_map<std::string, NtshEngn::Material> NtshEngn::AssetLoaderModule:
 			}
 
 			if (currentMaterial) {
-				currentMaterial->emissiveTexture.image = image;
+				if (graphicsModule) {
+					currentMaterial->emissiveTexture.image = graphicsModule->load(*image);
+				}
 			}
 		}
 		else if (tokens[0] == "map_Ke") {
@@ -640,7 +647,9 @@ std::unordered_map<std::string, NtshEngn::Material> NtshEngn::AssetLoaderModule:
 				image->colorSpace = ImageColorSpace::SRGB;
 			}
 			if (currentMaterial) {
-				currentMaterial->emissiveTexture.image = image;
+				if (graphicsModule) {
+					currentMaterial->emissiveTexture.image = graphicsModule->load(*image);
+				}
 			}
 		}
 	}
@@ -1265,7 +1274,9 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 								}
 							}
 
-							primitive.material.diffuseTexture.image = image;
+							if (graphicsModule) {
+								primitive.material.diffuseTexture.image = graphicsModule->load(*image);
+							}
 						}
 						else if (baseColorImage->buffer_view) {
 							cgltf_buffer_view* bufferView = baseColorImage->buffer_view;
@@ -1281,7 +1292,9 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 								image->colorSpace = ImageColorSpace::SRGB;
 							}
 
-							primitive.material.diffuseTexture.image = image;
+							if (graphicsModule) {
+								primitive.material.diffuseTexture.image = graphicsModule->load(*image);
+							}
 						}
 
 						if (image) {
@@ -1317,7 +1330,9 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 							};
 						}
 
-						primitive.material.diffuseTexture.image = image;
+						if (graphicsModule) {
+							primitive.material.diffuseTexture.image = graphicsModule->load(*image);
+						}
 						primitive.material.diffuseTexture.imageSampler = nearestSampler;
 					}
 
@@ -1373,12 +1388,14 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 								image->colorSpace = ImageColorSpace::Linear;
 							}
 
-							primitive.material.metalnessTexture.image = image;
+							if (graphicsModule) {
+								primitive.material.metalnessTexture.image = graphicsModule->load(*image);
+							}
 							primitive.material.roughnessTexture.image = primitive.material.metalnessTexture.image;
 						}
 
 						if (image) {
-							primitive.material.metalnessTexture.image = image;
+							primitive.material.metalnessTexture.image = graphicsModule->load(*image);
 							primitive.material.roughnessTexture.image = primitive.material.metalnessTexture.image;
 							if (metallicRoughnessTexture->sampler != NULL) {
 								primitive.material.metalnessTexture.imageSampler.magFilter = m_gltfFilterToImageSamplerFilter[metallicRoughnessTexture->sampler->mag_filter];
@@ -1413,7 +1430,9 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 							};
 						}
 
-						primitive.material.metalnessTexture.image = image;
+						if (graphicsModule) {
+							primitive.material.metalnessTexture.image = graphicsModule->load(*image);
+						}
 						primitive.material.roughnessTexture.image = primitive.material.metalnessTexture.image;
 						primitive.material.metalnessTexture.imageSampler = nearestSampler;
 						primitive.material.roughnessTexture.imageSampler = primitive.material.metalnessTexture.imageSampler;
@@ -1456,7 +1475,9 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 							}
 						}
 
-						primitive.material.normalTexture.image = image;
+						if (graphicsModule) {
+							primitive.material.normalTexture.image = graphicsModule->load(*image);
+						}
 					}
 					else if (normalImage->buffer_view) {
 						cgltf_buffer_view* bufferView = normalImage->buffer_view;
@@ -1472,7 +1493,9 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 							image->colorSpace = ImageColorSpace::SRGB;
 						}
 
-						primitive.material.normalTexture.image = image;
+						if (graphicsModule) {
+							primitive.material.normalTexture.image = graphicsModule->load(*image);
+						}
 					}
 
 					if (image) {
@@ -1529,7 +1552,9 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 							}
 						}
 
-						primitive.material.emissiveTexture.image = image;
+						if (graphicsModule) {
+							primitive.material.emissiveTexture.image = graphicsModule->load(*image);
+						}
 					}
 					else if (emissiveImage->buffer_view) {
 						cgltf_buffer_view* bufferView = emissiveImage->buffer_view;
@@ -1545,7 +1570,9 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 							image->colorSpace = ImageColorSpace::SRGB;
 						}
 
-						primitive.material.normalTexture.image = image;
+						if (graphicsModule) {
+							primitive.material.normalTexture.image = graphicsModule->load(*image);
+						}
 					}
 
 					if (image) {
@@ -1581,7 +1608,9 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 						};
 					}
 
-					primitive.material.emissiveTexture.image = image;
+					if (graphicsModule) {
+						primitive.material.emissiveTexture.image = graphicsModule->load(*image);
+					}
 					primitive.material.emissiveTexture.imageSampler = nearestSampler;
 				}
 				if (primitiveMaterial->has_emissive_strength) {
@@ -1624,7 +1653,9 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 							}
 						}
 
-						primitive.material.occlusionTexture.image = image;
+						if (graphicsModule) {
+							primitive.material.occlusionTexture.image = graphicsModule->load(*image);
+						}
 					}
 					else if (occlusionImage->buffer_view) {
 						cgltf_buffer_view* bufferView = occlusionImage->buffer_view;
@@ -1640,7 +1671,9 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 							image->colorSpace = ImageColorSpace::Linear;
 						}
 
-						primitive.material.normalTexture.image = image;
+						if (graphicsModule) {
+							primitive.material.normalTexture.image = graphicsModule->load(*image);
+						}
 					}
 
 					if (image) {
