@@ -1153,7 +1153,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 
 			// Indices
 			cgltf_accessor* accessor = nodeMeshPrimitive.indices;
-			if (accessor != NULL) {
+			if (accessor) {
 				primitive.mesh.indices.reserve(accessor->count);
 				cgltf_buffer_view* bufferView = accessor->buffer_view;
 				cgltf_component_type componentType = accessor->component_type;
@@ -1233,7 +1233,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 
 			// Material
 			cgltf_material* primitiveMaterial = nodeMeshPrimitive.material;
-			if (primitiveMaterial != NULL) {
+			if (primitiveMaterial) {
 				if (primitiveMaterial->has_pbr_metallic_roughness) {
 					cgltf_pbr_metallic_roughness pbrMetallicRoughness = primitiveMaterial->pbr_metallic_roughness;
 
@@ -1241,7 +1241,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 					cgltf_texture_view baseColorTextureView = pbrMetallicRoughness.base_color_texture;
 					cgltf_texture* baseColorTexture = baseColorTextureView.texture;
 					cgltf_float* baseColorFactor = pbrMetallicRoughness.base_color_factor;
-					if (baseColorTexture != NULL) {
+					if (baseColorTexture) {
 						cgltf_image* baseColorImage = baseColorTexture->image;
 						Image* image = nullptr;
 						if (baseColorImage->uri) {
@@ -1298,7 +1298,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 						}
 
 						if (image) {
-							if (baseColorTexture->sampler != NULL) {
+							if (baseColorTexture->sampler) {
 								primitive.material.diffuseTexture.imageSampler.magFilter = m_gltfFilterToImageSamplerFilter[baseColorTexture->sampler->mag_filter];
 								primitive.material.diffuseTexture.imageSampler.minFilter = m_gltfFilterToImageSamplerFilter[baseColorTexture->sampler->min_filter];
 								primitive.material.diffuseTexture.imageSampler.mipmapFilter = m_gltfFilterToImageSamplerFilterMipMap[baseColorTexture->sampler->min_filter];
@@ -1313,7 +1313,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 							}
 						}
 					}
-					else if (baseColorFactor != NULL) {
+					else if (baseColorFactor) {
 						std::string mapKey = "srgb " + std::to_string(baseColorFactor[0]) + " " + std::to_string(baseColorFactor[1]) + " " + std::to_string(baseColorFactor[2]) + " " + std::to_string(baseColorFactor[3]);
 
 						Image* image = assetManager->findImageByName(mapKey);
@@ -1341,7 +1341,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 					cgltf_texture* metallicRoughnessTexture = metallicRoughnessTextureView.texture;
 					cgltf_float metallicFactor = pbrMetallicRoughness.metallic_factor;
 					cgltf_float roughnessFactor = pbrMetallicRoughness.roughness_factor;
-					if (metallicRoughnessTexture != NULL) {
+					if (metallicRoughnessTexture) {
 						cgltf_image* metallicRoughnessImage = metallicRoughnessTexture->image;
 						Image* image = nullptr;
 						if (metallicRoughnessImage->uri) {
@@ -1397,7 +1397,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 						if (image) {
 							primitive.material.metalnessTexture.image = graphicsModule->load(*image);
 							primitive.material.roughnessTexture.image = primitive.material.metalnessTexture.image;
-							if (metallicRoughnessTexture->sampler != NULL) {
+							if (metallicRoughnessTexture->sampler) {
 								primitive.material.metalnessTexture.imageSampler.magFilter = m_gltfFilterToImageSamplerFilter[metallicRoughnessTexture->sampler->mag_filter];
 								primitive.material.metalnessTexture.imageSampler.minFilter = m_gltfFilterToImageSamplerFilter[metallicRoughnessTexture->sampler->min_filter];
 								primitive.material.metalnessTexture.imageSampler.mipmapFilter = m_gltfFilterToImageSamplerFilterMipMap[metallicRoughnessTexture->sampler->min_filter];
@@ -1442,7 +1442,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 				// Normal texture
 				cgltf_texture_view normalTextureView = primitiveMaterial->normal_texture;
 				cgltf_texture* normalTexture = normalTextureView.texture;
-				if (normalTexture != NULL) {
+				if (normalTexture) {
 					cgltf_image* normalImage = normalTexture->image;
 					Image* image = nullptr;
 					if (normalImage->uri) {
@@ -1499,7 +1499,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 					}
 
 					if (image) {
-						if (normalTexture->sampler != NULL) {
+						if (normalTexture->sampler) {
 							primitive.material.normalTexture.imageSampler.magFilter = m_gltfFilterToImageSamplerFilter[normalTexture->sampler->mag_filter];
 							primitive.material.normalTexture.imageSampler.minFilter = m_gltfFilterToImageSamplerFilter[normalTexture->sampler->min_filter];
 							primitive.material.normalTexture.imageSampler.mipmapFilter = m_gltfFilterToImageSamplerFilterMipMap[normalTexture->sampler->min_filter];
@@ -1519,7 +1519,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 				cgltf_texture_view emissiveTextureView = primitiveMaterial->emissive_texture;
 				cgltf_texture* emissiveTexture = emissiveTextureView.texture;
 				cgltf_float* emissiveFactor = primitiveMaterial->emissive_factor;
-				if (emissiveTexture != NULL) {
+				if (emissiveTexture) {
 					cgltf_image* emissiveImage = emissiveTexture->image;
 					Image* image = nullptr;
 					if (emissiveImage->uri) {
@@ -1576,7 +1576,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 					}
 
 					if (image) {
-						if (emissiveTexture->sampler != NULL) {
+						if (emissiveTexture->sampler) {
 							primitive.material.emissiveTexture.imageSampler.magFilter = m_gltfFilterToImageSamplerFilter[emissiveTexture->sampler->mag_filter];
 							primitive.material.emissiveTexture.imageSampler.minFilter = m_gltfFilterToImageSamplerFilter[emissiveTexture->sampler->min_filter];
 							primitive.material.emissiveTexture.imageSampler.mipmapFilter = m_gltfFilterToImageSamplerFilterMipMap[emissiveTexture->sampler->min_filter];
@@ -1591,7 +1591,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 						}
 					}
 				}
-				else if (emissiveFactor != NULL) {
+				else if (emissiveFactor) {
 					std::string mapKey = "srgb " + std::to_string(emissiveFactor[0]) + " " + std::to_string(emissiveFactor[1]) + " " + std::to_string(emissiveFactor[2]) + " " + std::to_string(1.0f);
 					
 					Image* image = assetManager->findImageByName(mapKey);
@@ -1620,7 +1620,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 				// Occlusion texture
 				cgltf_texture_view occlusionTextureView = primitiveMaterial->occlusion_texture;
 				cgltf_texture* occlusionTexture = occlusionTextureView.texture;
-				if (occlusionTexture != NULL) {
+				if (occlusionTexture) {
 					cgltf_image* occlusionImage = occlusionTexture->image;
 					Image* image = nullptr;
 					if (occlusionImage->uri) {
@@ -1677,7 +1677,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 					}
 
 					if (image) {
-						if (occlusionTexture->sampler != NULL) {
+						if (occlusionTexture->sampler) {
 							primitive.material.occlusionTexture.imageSampler.magFilter = m_gltfFilterToImageSamplerFilter[occlusionTexture->sampler->mag_filter];
 							primitive.material.occlusionTexture.imageSampler.minFilter = m_gltfFilterToImageSamplerFilter[occlusionTexture->sampler->min_filter];
 							primitive.material.occlusionTexture.imageSampler.mipmapFilter = m_gltfFilterToImageSamplerFilterMipMap[occlusionTexture->sampler->min_filter];
