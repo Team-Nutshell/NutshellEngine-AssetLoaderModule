@@ -1306,7 +1306,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 								primitive.material.diffuseTexture.imageSampler.addressModeV = m_gltfFilterToImageSamplerAddressMode[baseColorTexture->sampler->wrap_t];
 								primitive.material.diffuseTexture.imageSampler.addressModeW = ImageSamplerAddressMode::ClampToEdge;
 								primitive.material.diffuseTexture.imageSampler.borderColor = ImageSamplerBorderColor::IntOpaqueBlack;
-								primitive.material.diffuseTexture.imageSampler.anisotropyLevel = 16.0f;
+								primitive.material.diffuseTexture.imageSampler.maxAnisotropy = 16.0f;
 							}
 							else {
 								primitive.material.diffuseTexture.imageSampler = trilinearSampler;
@@ -1405,7 +1405,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 								primitive.material.metalnessTexture.imageSampler.addressModeV = m_gltfFilterToImageSamplerAddressMode[metallicRoughnessTexture->sampler->wrap_t];
 								primitive.material.metalnessTexture.imageSampler.addressModeW = ImageSamplerAddressMode::ClampToEdge;
 								primitive.material.metalnessTexture.imageSampler.borderColor = ImageSamplerBorderColor::IntOpaqueBlack;
-								primitive.material.metalnessTexture.imageSampler.anisotropyLevel = 16.0f;
+								primitive.material.metalnessTexture.imageSampler.maxAnisotropy = 16.0f;
 							}
 							else {
 								primitive.material.metalnessTexture.imageSampler = trilinearSampler;
@@ -1507,7 +1507,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 							primitive.material.normalTexture.imageSampler.addressModeV = m_gltfFilterToImageSamplerAddressMode[normalTexture->sampler->wrap_t];
 							primitive.material.normalTexture.imageSampler.addressModeW = ImageSamplerAddressMode::ClampToEdge;
 							primitive.material.normalTexture.imageSampler.borderColor = ImageSamplerBorderColor::IntOpaqueBlack;
-							primitive.material.normalTexture.imageSampler.anisotropyLevel = 16.0f;
+							primitive.material.normalTexture.imageSampler.maxAnisotropy = 16.0f;
 						}
 						else {
 							primitive.material.normalTexture.imageSampler = trilinearSampler;
@@ -1584,7 +1584,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 							primitive.material.emissiveTexture.imageSampler.addressModeV = m_gltfFilterToImageSamplerAddressMode[emissiveTexture->sampler->wrap_t];
 							primitive.material.emissiveTexture.imageSampler.addressModeW = ImageSamplerAddressMode::ClampToEdge;
 							primitive.material.emissiveTexture.imageSampler.borderColor = ImageSamplerBorderColor::IntOpaqueBlack;
-							primitive.material.emissiveTexture.imageSampler.anisotropyLevel = 16.0f;
+							primitive.material.emissiveTexture.imageSampler.maxAnisotropy = 16.0f;
 						}
 						else {
 							primitive.material.emissiveTexture.imageSampler = trilinearSampler;
@@ -1685,7 +1685,7 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 							primitive.material.occlusionTexture.imageSampler.addressModeV = m_gltfFilterToImageSamplerAddressMode[occlusionTexture->sampler->wrap_t];
 							primitive.material.occlusionTexture.imageSampler.addressModeW = ImageSamplerAddressMode::ClampToEdge;
 							primitive.material.occlusionTexture.imageSampler.borderColor = ImageSamplerBorderColor::IntOpaqueBlack;
-							primitive.material.occlusionTexture.imageSampler.anisotropyLevel = 16.0f;
+							primitive.material.occlusionTexture.imageSampler.maxAnisotropy = 16.0f;
 						}
 						else {
 							primitive.material.occlusionTexture.imageSampler = trilinearSampler;
