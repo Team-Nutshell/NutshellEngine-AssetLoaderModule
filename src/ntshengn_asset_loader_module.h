@@ -46,7 +46,7 @@ namespace NtshEngn {
 
 		bool loadModelGltf(const std::string& filePath, Model& model);
 		void loadGltfNode(const std::string& filePath, Model& model, cgltf_node* node, Bimap<uint32_t, cgltf_node*>& jointNodes);
-		void loadGltfAnimation(Model& model, cgltf_animation* node, Bimap<uint32_t, cgltf_node*>& jointNodes);
+		void loadGltfAnimation(const std::string& filePath, cgltf_animation* node, Bimap<uint32_t, cgltf_node*>& jointNodes, uint32_t index);
 
 	private:
 		ImageSampler trilinearSampler = { ImageSamplerFilter::Linear,

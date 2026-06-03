@@ -911,8 +911,16 @@ bool NtshEngn::AssetLoaderModule::loadModelGltf(const std::string& filePath, Mod
 				loadGltfNode(filePath, model, scene->nodes[i], jointNodes);
 			}
 
+			std::string normalizedPath = std::filesystem::canonical(filePath).string();
+			std::replace(normalizedPath.begin(), normalizedPath.end(), '\\', '/');
+			std::string currentPath = std::filesystem::current_path().string();
+			std::replace(currentPath.begin(), currentPath.end(), '\\', '/');
+			if (normalizedPath.substr(0, currentPath.size()) == currentPath) {
+				normalizedPath = normalizedPath.substr(currentPath.size() + 1);
+			}
+
 			for (size_t i = 0; i < data->animations_count; i++) {
-				loadGltfAnimation(model, &data->animations[i], jointNodes);
+				loadGltfAnimation(normalizedPath, &data->animations[i], jointNodes, static_cast<uint32_t>(i));
 			}
 		}
 
@@ -1792,8 +1800,16 @@ void NtshEngn::AssetLoaderModule::loadGltfNode(const std::string& filePath, Mode
 	}
 }
 
-void NtshEngn::AssetLoaderModule::loadGltfAnimation(Model& model, cgltf_animation* node, Bimap<uint32_t, cgltf_node*>& jointNodes) {
-	Animation animation;
+void NtshEngn::AssetLoaderModule::loadGltfAnimation(const std::string& filePath, cgltf_animation* node, Bimap<uint32_t, cgltf_node*>& jointNodes, uint32_t index) {
+	std::string animationName = File::normalize(filePath) + ":";
+	if (node->name) {
+		animationName += std::string(node->name);
+	}
+	else {
+		animationName += "animation" + std::to_string(index);
+	}
+
+	Animation* animation = assetManager->createAnimation(animationName);
 
 	for (size_t i = 0; i < node->channels_count; i++) {
 		AnimationChannel channel;
@@ -1880,21 +1896,17 @@ void NtshEngn::AssetLoaderModule::loadGltfAnimation(Model& model, cgltf_animatio
 		}
 
 		if (animationChannel.sampler->input->has_max) {
-			if (animationChannel.sampler->input->max[0] > animation.duration) {
-				animation.duration = animationChannel.sampler->input->max[0];
+			if (animationChannel.sampler->input->max[0] > animation->duration) {
+				animation->duration = animationChannel.sampler->input->max[0];
 			}
 		}
 		else {
 			if (!channel.keyframes.empty()) {
-				animation.duration = channel.keyframes.back().timestamp;
+				animation->duration = channel.keyframes.back().timestamp;
 			}
 		}
 
-		animation.jointChannels[jointIndex].push_back(channel);
-	}
-
-	for (size_t i = 0; i < model.primitives.size(); i++) {
-		model.primitives[i].mesh.animations.push_back(animation);
+		animation->jointChannels[jointIndex].push_back(channel);
 	}
 }
 
