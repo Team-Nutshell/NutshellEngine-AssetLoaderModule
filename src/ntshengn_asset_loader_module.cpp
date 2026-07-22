@@ -673,21 +673,37 @@ bool NtshEngn::AssetLoaderModule::loadFontBitmapTtf(const std::string& filePath,
 	int firstCharacter = fontInfo.fontstart;
 	int lastCharacter = firstCharacter + fontInfo.numGlyphs;
 
-	int ascent;
-	int descent;
-	stbtt_GetFontVMetrics(&fontInfo, &ascent, &descent, nullptr);
-
 	uint32_t width = 1024;
+
+	int x0;
+	int y0;
+	int x1;
+	int y1;
 
 	uint32_t x = 1;
 	uint32_t y = 1;
 	uint32_t yBottom = 1;
 	for (int codepoint = firstCharacter; codepoint < lastCharacter; codepoint++) {
-		int x0;
-		int y0;
-		int x1;
-		int y1;
 		stbtt_GetCodepointBitmapBox(&fontInfo, codepoint, scale, scale, &x0, &y0, &x1, &y1);
+
+		if (codepoint == firstCharacter) {
+			font.topLeft = { static_cast<float>(x0), static_cast<float>(y0) };
+			font.bottomRight = { static_cast<float>(x1), static_cast<float>(y1) };
+		}
+		else {
+			if (static_cast<float>(x0) < font.topLeft.x) {
+				font.topLeft.x = static_cast<float>(x0);
+			}
+			if (static_cast<float>(y0) < font.topLeft.y) {
+				font.topLeft.y = static_cast<float>(y0);
+			}
+			if (static_cast<float>(x1) > font.bottomRight.x) {
+				font.bottomRight.x = static_cast<float>(x1);
+			}
+			if (static_cast<float>(y1) > font.bottomRight.y) {
+				font.bottomRight.y = static_cast<float>(y1);
+			}
+		}
 
 		uint32_t glyphWidth = x1 - x0;
 		uint32_t glyphHeight = y1 - y0;
@@ -726,10 +742,6 @@ bool NtshEngn::AssetLoaderModule::loadFontBitmapTtf(const std::string& filePath,
 	y = 1;
 	yBottom = 1;
 	for (int codepoint = firstCharacter; codepoint < lastCharacter; codepoint++) {
-		int x0;
-		int y0;
-		int x1;
-		int y1;
 		stbtt_GetCodepointBitmapBox(&fontInfo, codepoint, scale, scale, &x0, &y0, &x1, &y1);
 
 		uint32_t glyphWidth = x1 - x0;
@@ -779,23 +791,39 @@ bool NtshEngn::AssetLoaderModule::loadFontSDFTtf(const std::string& filePath, Fo
 	int firstCharacter = fontInfo.fontstart;
 	int lastCharacter = firstCharacter + fontInfo.numGlyphs;
 
-	int ascent;
-	int descent;
-	stbtt_GetFontVMetrics(&fontInfo, &ascent, &descent, nullptr);
-
 	int padding = 1;
 
 	uint32_t width = 1024;
+
+	int x0;
+	int y0;
+	int x1;
+	int y1;
 
 	uint32_t x = 1;
 	uint32_t y = 1;
 	uint32_t yBottom = 1;
 	for (int codepoint = firstCharacter; codepoint < lastCharacter; codepoint++) {
-		int x0;
-		int y0;
-		int x1;
-		int y1;
 		stbtt_GetCodepointBitmapBox(&fontInfo, codepoint, scale, scale, &x0, &y0, &x1, &y1);
+
+		if (codepoint == firstCharacter) {
+			font.topLeft = { static_cast<float>(x0 - padding), static_cast<float>(y0 - padding) };
+			font.bottomRight = { static_cast<float>(x1 + padding), static_cast<float>(y1 + padding) };
+		}
+		else {
+			if (static_cast<float>(x0) < font.topLeft.x) {
+				font.topLeft.x = static_cast<float>(x0 - padding);
+			}
+			if (static_cast<float>(y0) < font.topLeft.y) {
+				font.topLeft.y = static_cast<float>(y0 - padding);
+			}
+			if (static_cast<float>(x1) > font.bottomRight.x) {
+				font.bottomRight.x = static_cast<float>(x1 + padding);
+			}
+			if (static_cast<float>(y1) > font.bottomRight.y) {
+				font.bottomRight.y = static_cast<float>(y1 + padding);
+			}
+		}
 
 		uint32_t glyphWidth = (x1 - x0) + (padding * 2);
 		uint32_t glyphHeight = (y1 - y0) + (padding * 2);
